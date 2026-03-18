@@ -1,0 +1,165 @@
+.about-page{
+  max-width:1500px;
+  margin:0 auto;
+  padding:0 2rem;
+  margin-top: 5rem;
+}
+/* ===== About Layout ===== */
+.about-layout {
+  display: grid;
+  grid-template-columns: 2fr 5fr;
+  gap: 2.5rem;
+  height: 100%;
+}
+
+/* ===== Image ===== */
+.about-image {
+  display: flex;
+  align-self:flex-start;
+  justify-content: center;
+}
+
+.about-image img {
+  width: 100%;
+  max-width: 280px;
+  border-radius: 16px;
+  object-fit: cover;
+}
+
+/* ===== Content ===== */
+h1{
+  font-size: 3rem;
+  margin-bottom: 3rem;
+  font-weight: 600;
+}
+
+.about-content {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+}
+
+/* All sections take full width */
+.about-section {
+  grid-column: 1 / -1;
+  margin-bottom: 1.2rem;
+}
+
+.about-section h3 {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.about-section p {
+  font-size: 1.2rem;
+  line-height: 1.6;
+  opacity: 0.85;
+}
+.about-intro-text{
+  max-width:100ch;
+}
+
+/* ===== Tech Grid ===== */
+.tech-grid {
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(120px, 1fr)
+  );
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.tech-item {
+  padding: 0.6rem 0.8rem;
+  text-align: center;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.05);
+  font-size: 1rem;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.tech-item:hover {
+  transform: translateY(-2px);
+  background: rgba(0, 0, 0, 0.08);
+}
+
+/* ===== Education ===== */
+.education-item {
+  margin-top: 0.8rem;
+}
+
+.education-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 1.5rem;
+  align-items: baseline;
+}
+
+.education-school {
+  font-weight: 600;
+  font-size: 1.2rem;
+}
+
+.education-year {
+  font-size: 1.2rem;
+  color: #666;
+  white-space: nowrap;
+}
+
+.education-program {
+  margin-top: 0.2rem;
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+
+/* ====== Dot Divider ====== */
+.dot-divider {
+  grid-column: 1 / -1;
+  width: 100%;
+
+  display: grid;
+  grid-auto-flow:column;
+  grid-auto-columns:minmax(5px, 1fr);
+  justify-content: space-between;
+  align-items: center;
+
+  margin: 1.5rem 0;
+  overflow: hidden;
+}
+
+.dot {
+  width: 14px;
+  aspect-ratio: 1 / 1;   
+  border-radius: 50%;
+  background: #C9002B;
+}
+
+@media(max-width:1200px){
+  .dot{
+    width:8px;
+    height:8px;
+    border-radius:50%;
+  }
+}
+
+
+/* ===== Responsive ===== */
+@media (max-width: 900px) {
+  .about-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .about-image {
+    margin-bottom: 2rem;
+    margin-top:-5rem;
+  }
+  .dot {
+      width: 5px;
+      height: 5px;
+      border-radius:50%;
+  }
+}
+
+

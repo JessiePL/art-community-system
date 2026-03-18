@@ -1,0 +1,189 @@
+[
+  {
+    "id": "tengen-uzui",
+    "order": 1,
+    "name": "Tengen Uzui",
+    "subtitle": "Flashy Sound Hashira presence",
+    "affiliation": "Demon Slayer Corps",
+    "image": "/characters/tengen-uzui.jpg",
+    "summary": "Tengen carries a performance-driven charisma that makes every frame feel oversized, rhythmic, and impossible to ignore.",
+    "abilities": ["Sound Breathing", "Dual Nichirin Blades", "Flashy Combat"],
+    "spotlight": "Best used for loud compositions, metallic accents, and high-energy promotional art."
+  },
+  {
+    "id": "kyojuro-rengoku",
+    "order": 2,
+    "name": "Kyojuro Rengoku",
+    "subtitle": "Radiant flame-forward leadership",
+    "affiliation": "Demon Slayer Corps",
+    "image": "/characters/kyojuro-rengoku.jpg",
+    "summary": "Rengoku projects conviction and warmth at the same time, making him ideal for heroic key visuals and emotionally direct posters.",
+    "abilities": ["Flame Breathing", "Leadership", "Heroic Presence"],
+    "spotlight": "Strong fit for warm palettes, crest motifs, and central hero layouts."
+  },
+  {
+    "id": "obanai-iguro",
+    "order": 3,
+    "name": "Obanai Iguro",
+    "subtitle": "Serpentine restraint and sharp tension",
+    "affiliation": "Demon Slayer Corps",
+    "image": "/characters/obanai-iguro.jpg",
+    "summary": "Obanai adds elegance, mystery, and controlled intensity, especially in compositions built around narrow framing and layered silhouettes.",
+    "abilities": ["Serpent Breathing", "Precision Movement", "Tension Control"],
+    "spotlight": "Works well in darker editorial art with thin line detail and contrast-heavy shadows."
+  },
+  {
+    "id": "mitsuri-kanroji",
+    "order": 4,
+    "name": "Mitsuri Kanroji",
+    "subtitle": "Heart-led power and bright emotion",
+    "affiliation": "Demon Slayer Corps",
+    "image": "/characters/mitsuri-kanroji.jpg",
+    "summary": "Mitsuri balances softness and explosive action, making her especially effective for expressive portraits and fan-centered merchandise art.",
+    "abilities": ["Love Breathing", "Flexible Combat", "Expressive Motion"],
+    "spotlight": "Perfect for vibrant pink-green accents and emotionally open character marketing."
+  },
+  {
+    "id": "muichiro-tokito",
+    "order": 5,
+    "name": "Muichiro Tokito",
+    "subtitle": "Fog-drift calm with hidden force",
+    "affiliation": "Demon Slayer Corps",
+    "image": "/characters/muichiro-tokito.jpg",
+    "summary": "Muichiro brings an airy stillness that turns quiet scenes into something haunting, soft, and unexpectedly powerful.",
+    "abilities": ["Mist Breathing", "Detached Focus", "Elegant Motion"],
+    "spotlight": "Great for washed gradients, drifting motion blur, and minimal atmospheric layouts."
+  },
+  {
+    "id": "giyu-tomioka",
+    "order": 6,
+    "name": "Giyu Tomioka",
+    "subtitle": "Still water discipline and solitude",
+    "affiliation": "Demon Slayer Corps",
+    "image": "/characters/giyu-tomioka.jpg",
+    "summary": "Giyu's reserved energy gives scenes weight and silence, creating a cooler visual counterbalance for louder personalities.",
+    "abilities": ["Water Breathing", "Defensive Precision", "Stoic Presence"],
+    "spotlight": "Best for blue-gray palettes, reflective space, and understated dramatic framing."
+  },
+  {
+    "id": "sanemi-shinazugawa",
+    "order": 7,
+    "name": "Sanemi Shinazugawa",
+    "subtitle": "Violent wind and scarred momentum",
+    "affiliation": "Demon Slayer Corps",
+    "image": "/characters/sanemi-shinazugawa.jpg",
+    "summary": "Sanemi injects raw aggression and broken-edge intensity into the gallery, especially when compositions need volatility.",
+    "abilities": ["Wind Breathing", "Ferocity", "Battle Scars"],
+    "spotlight": "Strong for jagged diagonals, distressed textures, and combat-heavy promotional sequences."
+  },
+  {
+    "id": "gyomei-himejima",
+    "order": 8,
+    "name": "Gyomei Himejima",
+    "subtitle": "Massive spiritual gravity",
+    "affiliation": "Demon Slayer Corps",
+    "image": "/characters/gyomei-himejima.jpg",
+    "summary": "Gyomei delivers scale, compassion, and solemn force, making him ideal for centered layouts that need emotional weight.",
+    "abilities": ["Stone Breathing", "Physical Power", "Calm Authority"],
+    "spotlight": "Excellent for monumental framing, earth tones, and icon-like composition."
+  },
+  {
+    "id": "tanjiro-kamado",
+    "order": 9,
+    "name": "Tanjiro Kamado",
+    "subtitle": "Empathy-driven protagonist energy",
+    "affiliation": "Demon Slayer Corps",
+    "image": "/characters/tanjiro-kamado.jpg",
+    "summary": "Tanjiro anchors the gallery with warmth, resilience, and broad emotional accessibility, which makes him ideal for lead campaign visuals.",
+    "abilities": ["Water Breathing", "Adaptive Growth", "Hanafuda Identity"],
+    "spotlight": "Reliable centerpiece for key art, entry screens, and story-led homepage framing."
+  },
+  {
+    "id": "kanao-tsuyuri",
+    "order": 10,
+    "name": "Kanao Tsuyuri",
+    "subtitle": "Quiet observation with floral precision",
+    "affiliation": "Demon Slayer Corps",
+    "image": "/characters/kanao-tsuyuri.jpg",
+    "summary": "Kanao adds poise and delicacy, making her a strong choice for restrained portrait work and elegant feminine layouts.",
+    "abilities": ["Flower Breathing", "Observation", "Composed Grace"],
+    "spotlight": "Good for petal motifs, quiet close-ups, and refined vertical compositions."
+  },
+  {
+    "id": "kyojuro-rengoku-flame-version",
+    "order": 11,
+    "name": "Kyojuro Rengoku Flame Version",
+    "subtitle": "High-heat alternate hero portrait",
+    "affiliation": "Demon Slayer Corps",
+    "image": "/characters/kyojuro-rengoku-flame-version.jpg",
+    "summary": "This version emphasizes pure flame spectacle, pushing Rengoku further into poster-grade intensity and theatrical motion.",
+    "abilities": ["Flame Burst", "Heroic Focus", "High Contrast Color"],
+    "spotlight": "Great for action banners, premium merch, and heightened event visuals."
+  },
+  {
+    "id": "nezuko-kamado",
+    "order": 12,
+    "name": "Nezuko Kamado",
+    "subtitle": "Soft innocence and explosive danger",
+    "affiliation": "Kamado Family",
+    "image": "/characters/nezuko-kamado.jpg",
+    "summary": "Nezuko is one of the strongest emotional anchors in the set, blending cuteness, volatility, and instant recognizability.",
+    "abilities": ["Demon Transformation", "Regeneration", "Protective Ferocity"],
+    "spotlight": "Perfect for fan-favorite merchandise, emotional scene cards, and contrast-rich illustrations."
+  },
+  {
+    "id": "inosuke-hashibira",
+    "order": 13,
+    "name": "Inosuke Hashibira",
+    "subtitle": "Wild motion and feral speed",
+    "affiliation": "Demon Slayer Corps",
+    "image": "/characters/inosuke-hashibira.jpg",
+    "summary": "Inosuke brings chaos, humor, and animal aggression, which makes him ideal for dynamic carousel moments and punchy motion graphics.",
+    "abilities": ["Beast Breathing", "Dual Blades", "Instinct Combat"],
+    "spotlight": "Best for aggressive angles, shredded edges, and high-speed movement cues."
+  },
+  {
+    "id": "zenitsu-agatsuma",
+    "order": 14,
+    "name": "Zenitsu Agatsuma",
+    "subtitle": "Fear and lightning in one frame",
+    "affiliation": "Demon Slayer Corps",
+    "image": "/characters/zenitsu-agatsuma.jpg",
+    "summary": "Zenitsu creates dramatic contrast between nervous vulnerability and sudden electric brilliance, which is visually very effective.",
+    "abilities": ["Thunder Breathing", "Burst Speed", "Emotional Contrast"],
+    "spotlight": "Excellent for bright yellow energy lines, comic tension, and sudden action beats."
+  },
+  {
+    "id": "shinobu-kocho",
+    "order": 15,
+    "name": "Shinobu Kocho",
+    "subtitle": "Elegant poison and smiling danger",
+    "affiliation": "Demon Slayer Corps",
+    "image": "/characters/shinobu-kocho.jpg",
+    "summary": "Shinobu adds refined menace and grace, creating a beautiful but dangerous tone that reads instantly in portrait-led design.",
+    "abilities": ["Insect Breathing", "Poison Technique", "Elegant Threat"],
+    "spotlight": "Strong for violet accents, graceful curves, and delicate-but-sharp visual storytelling."
+  },
+  {
+    "id": "kyojuro-rengoku-alternate-version",
+    "order": 16,
+    "name": "Kyojuro Rengoku Alternate Version",
+    "subtitle": "Secondary heroic composition study",
+    "affiliation": "Demon Slayer Corps",
+    "image": "/characters/kyojuro-rengoku-alternate-version.jpg",
+    "summary": "An alternate Rengoku portrait that supports variation across the gallery without losing the core fiery identity.",
+    "abilities": ["Flame Presence", "Alternate Framing", "Campaign Variation"],
+    "spotlight": "Useful for comparing layout directions and building multi-version promotional sets."
+  },
+  {
+    "id": "tanjiro-kamado-fire-breathing-version",
+    "order": 17,
+    "name": "Tanjiro Kamado Fire Breathing Version",
+    "subtitle": "Fiery escalation of the lead hero",
+    "affiliation": "Demon Slayer Corps",
+    "image": "/characters/tanjiro-kamado-fire-breathing-version.jpg",
+    "summary": "This alternate Tanjiro image pushes the hero into a hotter, more aggressive visual mode suited for finale moments.",
+    "abilities": ["Fire Breathing", "Lead Hero Energy", "Combat Escalation"],
+    "spotlight": "Ideal for climactic callouts, launch banners, and more intense homepage storytelling."
+  }
+]

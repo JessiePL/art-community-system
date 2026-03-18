@@ -1,0 +1,55 @@
+/* =========================
+   Home Page
+   ========================= */
+
+.home {
+  height: 100%;
+  width: 100%;
+}
+
+/* Split layout: 2 : 3 */
+.home-split {
+  display: grid;
+  grid-template-columns: 2fr 3fr;
+  height: 100%;
+  align-items: center;
+  padding: 6vh 6vw;
+  box-sizing: border-box;
+  gap: 4vw;
+}
+
+/* Image area */
+.home-image {
+  position:relative
+  display: flex;
+  justify-content: center;
+  align-items:center;
+  /*overflow:hidden;*/
+}
+
+.home-image img {
+  width: 140%;
+  max-width: none;
+  height: auto;
+}
+
+/* Content area */
+.home-content {
+  display: flex;
+  padding-left: 10vw;
+  margin-top:0vh;
+}
+
+/* Code-style text */
+.home-code {
+  font-family: "Courier New", monospace;
+  font-weight: 700;
+  font-size: clamp(20px, 2.0vw, 40px);
+  line-height: 1.55;
+  color: #111;
+
+  white-space: pre-wrap;
+  word-break: break-word;
+  padding-left:5vw;
+}
+

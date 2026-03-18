@@ -1,0 +1,57 @@
+/* =========================
+   Side Menu (Desktop)
+   ========================= */
+
+.side-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 2vh;
+}
+
+/* Menu button */
+.menu-btn {
+  width: 100%;
+  padding: 2vh 1vw;
+
+  border-radius: 16px;
+  border: none;
+
+  background: #0f172a;
+  color: #ffffff;
+
+  font-size: 16px;
+  text-align: left;
+
+  cursor: pointer;
+}
+
+.menu-btn.active {
+  background: #C9002B;
+  color: #fff;
+}
+
+/* =========================
+   Mobile Side Menu (Top Bar)
+   ========================= */
+
+@media (max-width: 900px) {
+  .side-menu {
+    flex-direction: row;          
+    justify-content: space-between;
+    align-items: center;
+    padding:1.2vh;
+
+    gap: 2vw;
+  }
+
+  .menu-btn {
+    flex: 1;                      
+    padding: 1.2vh 0;
+
+    font-size: 14px;
+    text-align: center;
+
+    white-space: nowrap;          
+  }
+}
+
