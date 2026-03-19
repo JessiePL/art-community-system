@@ -55,6 +55,8 @@ export default function App() {
   const [selectedRenderIndex, setSelectedRenderIndex] = useState<number | null>(null);
   const [isCarouselPaused, setIsCarouselPaused] = useState(false);
   const stripRef = useRef<HTMLDivElement | null>(null);
+  const manualScrollTimeoutRef = useRef<number | null>(null);
+  const isManualScrollingRef = useRef(false);
 
   const products =
     selectedCategory === "All"
@@ -75,7 +77,7 @@ export default function App() {
   const isLoggedIn = role !== "guest";
   const isMember = role === "member" || role === "admin";
   const loopCharacters =
-    characters.length > 0 ? [...characters, ...characters] : [];
+    characters.length > 0 ? [...characters, ...characters, ...characters] : [];
 
   useEffect(() => {
     let isMounted = true;
@@ -89,7 +91,7 @@ export default function App() {
 
         setCharacters(data);
         setSelectedCharacterId(data[0]?.id ?? "");
-        setSelectedRenderIndex(0);
+        setSelectedRenderIndex(data.length > 0 ? data.length : 0);
       })
       .catch(() => {
         if (!isMounted) {
@@ -103,6 +105,17 @@ export default function App() {
       isMounted = false;
     };
   }, []);
+
+  useEffect(() => {
+    const strip = stripRef.current;
+
+    if (!strip || characters.length === 0) {
+      return;
+    }
+
+    const loopWidth = strip.scrollWidth / 3;
+    strip.scrollLeft = loopWidth;
+  }, [characters.length]);
 
   useEffect(() => {
     if (page !== "home" || isCarouselPaused || characters.length === 0) {
@@ -119,6 +132,11 @@ export default function App() {
         return;
       }
 
+      if (isManualScrollingRef.current) {
+        frameId = window.requestAnimationFrame(animate);
+        return;
+      }
+
       if (lastTimestamp === 0) {
         lastTimestamp = timestamp;
       }
@@ -126,12 +144,12 @@ export default function App() {
       const delta = timestamp - lastTimestamp;
       lastTimestamp = timestamp;
 
-      const loopWidth = strip.scrollWidth / 2;
+      const loopWidth = strip.scrollWidth / 3;
       const speed = 0.055;
 
       strip.scrollLeft += delta * speed;
 
-      if (strip.scrollLeft >= loopWidth) {
+      if (strip.scrollLeft >= loopWidth * 2) {
         strip.scrollLeft -= loopWidth;
       }
 
@@ -144,33 +162,8 @@ export default function App() {
   }, [characters, isCarouselPaused, page]);
 
   useEffect(() => {
-    const strip = stripRef.current;
-
-    if (!strip || characters.length === 0) {
-      return;
-    }
-
-    const handleLoopScroll = () => {
-      const loopWidth = strip.scrollWidth / 2;
-
-      if (strip.scrollLeft >= loopWidth) {
-        strip.scrollLeft -= loopWidth;
-      }
-
-      if (strip.scrollLeft < 0) {
-        strip.scrollLeft += loopWidth;
-      }
-    };
-
-    strip.addEventListener("scroll", handleLoopScroll);
-
-    return () => {
-      strip.removeEventListener("scroll", handleLoopScroll);
-    };
-  }, [characters.length]);
-
-  useEffect(() => {
     if (
+      !isCarouselPaused ||
       !selectedCharacterId ||
       selectedRenderIndex === null ||
       !stripRef.current
@@ -188,11 +181,8 @@ export default function App() {
         return;
       }
 
-      const leftBias = 120;
-      const targetLeft =
-        currentCard.offsetLeft -
-        (strip.clientWidth - currentCard.clientWidth) / 2 -
-        leftBias;
+      const leftInset = 36;
+      const targetLeft = currentCard.offsetLeft - leftInset;
 
       strip.scrollTo({
         left: Math.max(targetLeft, 0),
@@ -201,10 +191,18 @@ export default function App() {
     };
 
     scrollToCurrent();
-    const frame = window.requestAnimationFrame(scrollToCurrent);
+    const firstFrame = window.requestAnimationFrame(scrollToCurrent);
+    const secondFrame = window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(scrollToCurrent);
+    });
+    const timeout = window.setTimeout(scrollToCurrent, 220);
 
-    return () => window.cancelAnimationFrame(frame);
-  }, [selectedCharacterId, selectedRenderIndex]);
+    return () => {
+      window.cancelAnimationFrame(firstFrame);
+      window.cancelAnimationFrame(secondFrame);
+      window.clearTimeout(timeout);
+    };
+  }, [isCarouselPaused, selectedCharacterId, selectedRenderIndex]);
 
   const addToCart = (product: Product) => {
     setCart((current) => ({
@@ -271,22 +269,55 @@ export default function App() {
     }
 
     const distance = Math.max(strip.clientWidth * 0.42, 260);
-    const loopWidth = strip.scrollWidth / 2;
-    let left = direction === "right" ? strip.scrollLeft + distance : strip.scrollLeft - distance;
+    const loopWidth = strip.scrollWidth / 3;
+    let baseLeft = strip.scrollLeft;
 
-    while (left >= loopWidth) {
+    // Keep manual navigation inside the middle copy so smooth scrolling
+    // never chooses the opposite direction across the seam.
+    if (direction === "right" && baseLeft >= loopWidth * 2 - distance) {
+      baseLeft -= loopWidth;
+      strip.scrollLeft = baseLeft;
+    }
+
+    if (direction === "left" && baseLeft <= loopWidth + distance) {
+      baseLeft += loopWidth;
+      strip.scrollLeft = baseLeft;
+    }
+
+    let left = direction === "right" ? baseLeft + distance : baseLeft - distance;
+
+    while (left >= loopWidth * 2) {
       left -= loopWidth;
     }
 
-    while (left < 0) {
+    while (left < loopWidth) {
       left += loopWidth;
+    }
+
+    isManualScrollingRef.current = true;
+
+    if (manualScrollTimeoutRef.current !== null) {
+      window.clearTimeout(manualScrollTimeoutRef.current);
     }
 
     strip.scrollTo({
       left,
       behavior: "smooth",
     });
+
+    manualScrollTimeoutRef.current = window.setTimeout(() => {
+      isManualScrollingRef.current = false;
+      manualScrollTimeoutRef.current = null;
+    }, 420);
   };
+
+  useEffect(() => {
+    return () => {
+      if (manualScrollTimeoutRef.current !== null) {
+        window.clearTimeout(manualScrollTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const renderHome = () => (
     <div className="home-stage">
@@ -345,10 +376,13 @@ export default function App() {
                 selectedRenderIndex === index &&
                 character.id === selectedCharacterId ? (
                   <span className="tile-expanded">
-                    <span className="tile-detail-card">
+                    <span
+                      className="tile-detail-card"
+                      onClick={(event) => event.stopPropagation()}
+                    >
                       <span className="tile-copy expanded-copy">
                         <strong>{character.name}</strong>
-                        <span className="tile-credit">@米花塘挂嘴边</span>
+                        <span className="tile-credit">@米花糖挂嘴边</span>
                         <em>{character.subtitle}</em>
                       </span>
                       <span className="tile-detail-text">
@@ -367,7 +401,7 @@ export default function App() {
                 ) : (
                   <span className="tile-copy">
                     <strong>{character.name}</strong>
-                    <span className="tile-credit">@米花塘挂嘴边</span>
+                    <span className="tile-credit">@米花糖挂嘴边</span>
                     <em>{character.subtitle}</em>
                   </span>
                 )}

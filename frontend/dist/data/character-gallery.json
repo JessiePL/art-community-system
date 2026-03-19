@@ -110,12 +110,12 @@
     "spotlight": "Good for petal motifs, quiet close-ups, and refined vertical compositions."
   },
   {
-    "id": "kyojuro-rengoku-flame-version",
+    "id": "kyojuro-rengoku",
     "order": 11,
-    "name": "Kyojuro Rengoku Flame Version",
+    "name": "Kyojuro Rengoku",
     "subtitle": "High-heat alternate hero portrait",
     "affiliation": "Demon Slayer Corps",
-    "image": "/characters/kyojuro-rengoku-flame-version.jpg",
+    "image": "/characters/kyojuro-rengoku-2.jpg",
     "summary": "This version emphasizes pure flame spectacle, pushing Rengoku further into poster-grade intensity and theatrical motion.",
     "abilities": ["Flame Burst", "Heroic Focus", "High Contrast Color"],
     "spotlight": "Great for action banners, premium merch, and heightened event visuals."
@@ -132,19 +132,8 @@
     "spotlight": "Perfect for fan-favorite merchandise, emotional scene cards, and contrast-rich illustrations."
   },
   {
-    "id": "inosuke-hashibira",
-    "order": 13,
-    "name": "Inosuke Hashibira",
-    "subtitle": "Wild motion and feral speed",
-    "affiliation": "Demon Slayer Corps",
-    "image": "/characters/inosuke-hashibira.jpg",
-    "summary": "Inosuke brings chaos, humor, and animal aggression, which makes him ideal for dynamic carousel moments and punchy motion graphics.",
-    "abilities": ["Beast Breathing", "Dual Blades", "Instinct Combat"],
-    "spotlight": "Best for aggressive angles, shredded edges, and high-speed movement cues."
-  },
-  {
     "id": "zenitsu-agatsuma",
-    "order": 14,
+    "order": 13,
     "name": "Zenitsu Agatsuma",
     "subtitle": "Fear and lightning in one frame",
     "affiliation": "Demon Slayer Corps",
@@ -152,6 +141,17 @@
     "summary": "Zenitsu creates dramatic contrast between nervous vulnerability and sudden electric brilliance, which is visually very effective.",
     "abilities": ["Thunder Breathing", "Burst Speed", "Emotional Contrast"],
     "spotlight": "Excellent for bright yellow energy lines, comic tension, and sudden action beats."
+  },
+  {
+    "id": "inosuke-hashibira",
+    "order": 14,
+    "name": "Inosuke Hashibira",
+    "subtitle": "Wild motion and feral speed",
+    "affiliation": "Demon Slayer Corps",
+    "image": "/characters/inosuke-hashibira.jpg",
+    "summary": "Inosuke brings chaos, humor, and animal aggression, which makes him ideal for dynamic carousel moments and punchy motion graphics.",
+    "abilities": ["Beast Breathing", "Dual Blades", "Instinct Combat"],
+    "spotlight": "Best for aggressive angles, shredded edges, and high-speed movement cues."
   },
   {
     "id": "shinobu-kocho",
@@ -165,23 +165,23 @@
     "spotlight": "Strong for violet accents, graceful curves, and delicate-but-sharp visual storytelling."
   },
   {
-    "id": "kyojuro-rengoku-alternate-version",
+    "id": "kyojuro-rengoku",
     "order": 16,
-    "name": "Kyojuro Rengoku Alternate Version",
+    "name": "Kyojuro Rengoku",
     "subtitle": "Secondary heroic composition study",
     "affiliation": "Demon Slayer Corps",
-    "image": "/characters/kyojuro-rengoku-alternate-version.jpg",
+    "image": "/characters/kyojuro-rengoku-3.jpg",
     "summary": "An alternate Rengoku portrait that supports variation across the gallery without losing the core fiery identity.",
     "abilities": ["Flame Presence", "Alternate Framing", "Campaign Variation"],
     "spotlight": "Useful for comparing layout directions and building multi-version promotional sets."
   },
   {
-    "id": "tanjiro-kamado-fire-breathing-version",
+    "id": "tanjiro-kamado",
     "order": 17,
-    "name": "Tanjiro Kamado Fire Breathing Version",
+    "name": "Tanjiro Kamado",
     "subtitle": "Fiery escalation of the lead hero",
     "affiliation": "Demon Slayer Corps",
-    "image": "/characters/tanjiro-kamado-fire-breathing-version.jpg",
+    "image": "/characters/tanjiro-kamado-2.jpg",
     "summary": "This alternate Tanjiro image pushes the hero into a hotter, more aggressive visual mode suited for finale moments.",
     "abilities": ["Fire Breathing", "Lead Hero Energy", "Combat Escalation"],
     "spotlight": "Ideal for climactic callouts, launch banners, and more intense homepage storytelling."
