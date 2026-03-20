@@ -385,25 +385,115 @@
 }
 
 .effect-ripple-piece::before,
-.effect-ripple-piece::after {
+.effect-ripple-piece::after,
+.effect-ring-piece::before,
+.effect-ring-piece::after {
   content: "";
   position: absolute;
-  inset: 12%;
   border-radius: 50%;
   border: 1px solid rgba(214, 244, 255, 0.36);
 }
 
-.effect-ripple-piece::after {
-  inset: 28%;
+.effect-ripple-piece::before,
+.effect-ring-piece::before {
+  inset: var(--ring-inner-inset, 12%);
+}
+
+.effect-ripple-piece::after,
+.effect-ring-piece::after {
+  inset: var(--ring-core-inset, 28%);
   border-color: rgba(214, 244, 255, 0.24);
 }
 
-.effect-ripple-piece-green::before {
+.effect-ripple-piece-green::before,
+.effect-ring-piece-green::before {
   border-color: rgba(214, 255, 225, 0.34);
 }
 
-.effect-ripple-piece-green::after {
+.effect-ripple-piece-green::after,
+.effect-ring-piece-green::after {
   border-color: rgba(214, 255, 225, 0.22);
+}
+
+.effect-ring-piece {
+  --ring-border-width: 2px;
+  --ring-duration: 900ms;
+  --ring-end-scale: 2.65;
+  --ring-end-rotate: 300deg;
+  --ring-peak-opacity: 0.96;
+  --ring-glow-blur: 24px;
+  left: 50%;
+  top: 50%;
+  opacity: 0;
+  border-radius: 50%;
+  border: var(--ring-border-width) solid var(--ring-border-color, rgba(58, 132, 87, 0.88));
+  box-shadow: none;
+  background: radial-gradient(circle, rgba(62, 122, 79, var(--ring-fill-alpha, 0.12)) 0%, rgba(62, 122, 79, calc(var(--ring-fill-alpha, 0.12) * 0.45)) 34%, rgba(62, 122, 79, 0) 68%);
+  transform: translate3d(0, 0, 0) scale(0.08) rotate(0deg);
+  animation: ring-spiral-expand var(--ring-duration) cubic-bezier(0.16, 0.8, 0.24, 1) forwards;
+}
+
+.effect-ring-piece-green {
+  border-color: var(--ring-border-color, rgba(49, 132, 78, 0.9));
+  box-shadow: none;
+  background: radial-gradient(circle, rgba(62, 122, 79, var(--ring-fill-alpha, 0.14)) 0%, rgba(62, 122, 79, calc(var(--ring-fill-alpha, 0.14) * 0.45)) 34%, rgba(62, 122, 79, 0) 68%);
+}
+
+.effect-vortex-core,
+.effect-vortex-eye {
+  left: 50%;
+  top: 50%;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.effect-vortex-core {
+  --vortex-duration: 720ms;
+  --vortex-rotate: -320deg;
+  --vortex-opacity: 0.7;
+  --vortex-blur: 0.6px;
+  --vortex-scale: 1.12;
+  opacity: 0;
+  filter: blur(var(--vortex-blur));
+  background:
+    radial-gradient(circle at 50% 50%, rgba(80, 132, 98, 0.34) 0%, rgba(52, 102, 70, 0.28) 26%, rgba(30, 72, 44, 0.12) 44%, rgba(30, 72, 44, 0) 62%),
+    conic-gradient(from 0deg, rgba(31, 84, 51, 0) 0deg, rgba(74, 136, 95, 0.54) 54deg, rgba(31, 84, 51, 0.14) 102deg, rgba(31, 84, 51, 0) 164deg, rgba(74, 136, 95, 0.34) 224deg, rgba(31, 84, 51, 0) 360deg);
+  box-shadow: none;
+  transform: translate3d(0, 0, 0) scale(0.42) rotate(0deg);
+  animation: vortex-core-spin var(--vortex-duration) cubic-bezier(0.2, 0.72, 0.24, 1) forwards;
+}
+
+.effect-vortex-core::before,
+.effect-vortex-core::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+}
+
+.effect-vortex-core::before {
+  inset: 16%;
+  border: 2px solid rgba(61, 131, 85, 0.44);
+  border-top-color: rgba(98, 164, 118, 0.74);
+  border-right-color: rgba(39, 91, 57, 0.16);
+  transform: rotate(18deg);
+}
+
+.effect-vortex-core::after {
+  inset: 30%;
+  background: radial-gradient(circle, rgba(110, 162, 124, 0.38) 0%, rgba(58, 109, 74, 0.24) 36%, rgba(58, 109, 74, 0) 78%);
+  box-shadow: none;
+}
+
+.effect-vortex-eye {
+  --eye-duration: 620ms;
+  --eye-rotate: -120deg;
+  --eye-opacity: 0.7;
+  --eye-scale: 1.48;
+  opacity: 0;
+  background: radial-gradient(circle at 50% 50%, rgba(86, 142, 103, 0.32) 0%, rgba(58, 108, 75, 0.24) 28%, rgba(39, 84, 54, 0.12) 52%, rgba(39, 84, 54, 0) 76%);
+  box-shadow: none;
+  animation: vortex-eye-pulse var(--eye-duration) cubic-bezier(0.16, 0.82, 0.24, 1) forwards;
 }
 
 @keyframes music-burst-rise {
@@ -435,6 +525,54 @@
   100% {
     opacity: 0;
     transform: translate3d(0, 0, 0) scale(3.2);
+  }
+}
+
+@keyframes ring-spiral-expand {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) scale(0.08) rotate(0deg);
+  }
+
+  12% {
+    opacity: var(--ring-peak-opacity, 0.96);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) scale(var(--ring-end-scale, 2.65)) rotate(var(--ring-end-rotate, 300deg));
+  }
+}
+
+@keyframes vortex-core-spin {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) scale(0.42) rotate(0deg);
+  }
+
+  18% {
+    opacity: var(--vortex-opacity, 0.8);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) scale(var(--vortex-scale, 1.12)) rotate(var(--vortex-rotate, -320deg));
+  }
+}
+
+@keyframes vortex-eye-pulse {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) scale(0.3) rotate(0deg);
+  }
+
+  22% {
+    opacity: var(--eye-opacity, 0.98);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) scale(var(--eye-scale, 1.55)) rotate(var(--eye-rotate, -120deg));
   }
 }
 

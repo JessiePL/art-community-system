@@ -1,5 +1,5 @@
 import "../styles/home.css";
-import type { RefObject } from "react";
+import type { CSSProperties, RefObject } from "react";
 import type { CharacterProfile } from "../types/app";
 
 type CharacterEffect =
@@ -10,6 +10,46 @@ type CharacterEffect =
   | "sakura"
   | "hearts"
   | "butterfly";
+
+type WindRingPiece = {
+  left: string;
+  top: string;
+  size: string;
+  animationDelay: string;
+  borderWidth: string;
+  duration: string;
+  endScale: string;
+  rotate: string;
+  innerInset: string;
+  coreInset: string;
+  opacity: string;
+  glowBlur: string;
+  borderColor: string;
+  fillAlpha: string;
+};
+
+type WindVortexPiece = {
+  left: string;
+  top: string;
+  size: string;
+  animationDelay: string;
+  duration: string;
+  rotate: string;
+  opacity: string;
+  blur: string;
+  scale: string;
+};
+
+type WindEyePiece = {
+  left: string;
+  top: string;
+  size: string;
+  animationDelay: string;
+  duration: string;
+  rotate: string;
+  opacity: string;
+  scale: string;
+};
 
 type HomePageProps = {
   isCarouselPaused: boolean;
@@ -186,13 +226,7 @@ function renderEffectBurst(effect: CharacterEffect) {
         ["24%", "70%", "170px", "280ms"],
       ], "effect-ripple-piece");
     case "wind-ripple":
-      return renderRipplePieces([
-        ["16%", "22%", "132px", "0ms"],
-        ["40%", "50%", "184px", "90ms"],
-        ["64%", "20%", "152px", "150ms"],
-        ["72%", "62%", "210px", "220ms"],
-        ["24%", "70%", "170px", "280ms"],
-      ], "effect-ripple-piece effect-ripple-piece-green");
+      return renderWindVortex();
     case "snow":
       return renderTextPieces(
         "effect-snow effect-float-piece",
@@ -264,4 +298,233 @@ function renderRipplePieces(
       style={{ left, top, width: size, height: size, animationDelay }}
     />
   ));
+}
+
+function renderRingPieces(
+  pieces: WindRingPiece[],
+  className: string,
+) {
+  return pieces.map((piece, index) => {
+    const style = {
+      left: piece.left,
+      top: piece.top,
+      width: piece.size,
+      height: piece.size,
+      animationDelay: piece.animationDelay,
+      marginLeft: `calc(${piece.size} / -2)`,
+      marginTop: `calc(${piece.size} / -2)`,
+      "--ring-border-width": piece.borderWidth,
+      "--ring-duration": piece.duration,
+      "--ring-end-scale": piece.endScale,
+      "--ring-end-rotate": piece.rotate,
+      "--ring-inner-inset": piece.innerInset,
+      "--ring-core-inset": piece.coreInset,
+      "--ring-peak-opacity": piece.opacity,
+      "--ring-glow-blur": piece.glowBlur,
+      "--ring-border-color": piece.borderColor,
+      "--ring-fill-alpha": piece.fillAlpha,
+    } as CSSProperties;
+
+    return (
+      <span
+        key={`${piece.left}-${piece.top}-${piece.size}-${index}`}
+        className={className}
+        style={style}
+      />
+    );
+  });
+}
+
+
+function renderWindVortex() {
+  const burstCenters = [
+    { left: 22, top: 24, delay: 0, ringScale: 1.54 },
+    { left: 48, top: 44, delay: 145, ringScale: 1.7 },
+    { left: 76, top: 22, delay: 285, ringScale: 1.46 },
+    { left: 68, top: 58, delay: 430, ringScale: 1.66 },
+    { left: 28, top: 76, delay: 575, ringScale: 1.82 },
+  ];
+
+  const cores: WindVortexPiece[] = burstCenters.flatMap((center, burstIndex) => [
+    {
+      left: `${center.left}%`,
+      top: `${center.top}%`,
+      size: `${Math.round(112 * center.ringScale)}px`,
+      animationDelay: `${center.delay}ms`,
+      duration: "580ms",
+      rotate: burstIndex % 2 === 0 ? "-430deg" : "400deg",
+      opacity: "0.96",
+      blur: "0.8px",
+      scale: "1.14",
+    },
+    {
+      left: `${center.left + 3.8}%`,
+      top: `${center.top - 2.4}%`,
+      size: `${Math.round(168 * center.ringScale)}px`,
+      animationDelay: `${center.delay + 34}ms`,
+      duration: "640ms",
+      rotate: burstIndex % 2 === 0 ? "350deg" : "-370deg",
+      opacity: "0.68",
+      blur: "1.4px",
+      scale: "1.24",
+    },
+  ]);
+
+  const rings: WindRingPiece[] = burstCenters.flatMap((center, burstIndex) => [
+    {
+      left: `${center.left}%`,
+      top: `${center.top}%`,
+      size: `${Math.round(88 * center.ringScale)}px`,
+      animationDelay: `${center.delay + 6}ms`,
+      borderWidth: "5.4px",
+      duration: "530ms",
+      endScale: "2.26",
+      rotate: burstIndex % 2 === 0 ? "450deg" : "-420deg",
+      innerInset: "16%",
+      coreInset: "34%",
+      opacity: "0.98",
+      glowBlur: "24px",
+      borderColor: "rgba(34, 108, 63, 0.92)",
+      fillAlpha: "0.18",
+    },
+    {
+      left: `${center.left}%`,
+      top: `${center.top}%`,
+      size: `${Math.round(144 * center.ringScale)}px`,
+      animationDelay: `${center.delay + 58}ms`,
+      borderWidth: "3.8px",
+      duration: "720ms",
+      endScale: "2.74",
+      rotate: burstIndex % 2 === 0 ? "260deg" : "-240deg",
+      innerInset: "11%",
+      coreInset: "25%",
+      opacity: "0.9",
+      glowBlur: "30px",
+      borderColor: "rgba(72, 152, 101, 0.88)",
+      fillAlpha: "0.1",
+    },
+    {
+      left: `${center.left}%`,
+      top: `${center.top}%`,
+      size: `${Math.round(220 * center.ringScale)}px`,
+      animationDelay: `${center.delay + 120}ms`,
+      borderWidth: "3px",
+      duration: "940ms",
+      endScale: "3.18",
+      rotate: burstIndex % 2 === 0 ? "260deg" : "-240deg",
+      innerInset: "10%",
+      coreInset: "22%",
+      opacity: "0.78",
+      glowBlur: "38px",
+      borderColor: "rgba(43, 121, 74, 0.84)",
+      fillAlpha: "0.14",
+    },
+    {
+      left: `${center.left}%`,
+      top: `${center.top}%`,
+      size: `${Math.round(286 * center.ringScale)}px`,
+      animationDelay: `${center.delay + 186}ms`,
+      borderWidth: "2.5px",
+      duration: "1120ms",
+      endScale: "3.72",
+      rotate: burstIndex % 2 === 0 ? "260deg" : "-240deg",
+      innerInset: "9%",
+      coreInset: "20%",
+      opacity: "0.58",
+      glowBlur: "44px",
+      borderColor: "rgba(93, 170, 121, 0.78)",
+      fillAlpha: "0.07",
+    },
+  ]);
+
+  const eyes: WindEyePiece[] = burstCenters.flatMap((center, burstIndex) => [
+    {
+      left: `${center.left}%`,
+      top: `${center.top}%`,
+      size: `${Math.round(56 * center.ringScale)}px`,
+      animationDelay: `${center.delay}ms`,
+      duration: "580ms",
+      rotate: burstIndex % 2 === 0 ? "-170deg" : "180deg",
+      opacity: "0.98",
+      scale: "1.62",
+    },
+    {
+      left: `${center.left - 4.6}%`,
+      top: `${center.top + 3.4}%`,
+      size: `${Math.round(38 * center.ringScale)}px`,
+      animationDelay: `${center.delay + 74}ms`,
+      duration: "580ms",
+      rotate: burstIndex % 2 === 0 ? "150deg" : "-160deg",
+      opacity: "0.66",
+      scale: "1.42",
+    },
+  ]);
+
+  return (
+    <>
+      {renderVortexPieces(cores, "effect-vortex-core")}
+      {renderEyePieces(eyes, "effect-vortex-eye")}
+      {renderRingPieces(rings, "effect-ring-piece effect-ring-piece-green")}
+    </>
+  );
+}
+
+function renderVortexPieces(
+  pieces: WindVortexPiece[],
+  className: string,
+) {
+  return pieces.map((piece, index) => {
+    const style = {
+      left: piece.left,
+      top: piece.top,
+      width: piece.size,
+      height: piece.size,
+      animationDelay: piece.animationDelay,
+      marginLeft: `calc(${piece.size} / -2)`,
+      marginTop: `calc(${piece.size} / -2)`,
+      "--vortex-duration": piece.duration,
+      "--vortex-rotate": piece.rotate,
+      "--vortex-opacity": piece.opacity,
+      "--vortex-blur": piece.blur,
+      "--vortex-scale": piece.scale,
+    } as CSSProperties;
+
+    return (
+      <span
+        key={`${piece.left}-${piece.top}-${piece.size}-${index}`}
+        className={className}
+        style={style}
+      />
+    );
+  });
+}
+
+
+function renderEyePieces(
+  pieces: WindEyePiece[],
+  className: string,
+) {
+  return pieces.map((piece, index) => {
+    const style = {
+      left: piece.left,
+      top: piece.top,
+      width: piece.size,
+      height: piece.size,
+      animationDelay: piece.animationDelay,
+      marginLeft: `calc(${piece.size} / -2)`,
+      marginTop: `calc(${piece.size} / -2)`,
+      "--eye-duration": piece.duration,
+      "--eye-rotate": piece.rotate,
+      "--eye-opacity": piece.opacity,
+      "--eye-scale": piece.scale,
+    } as CSSProperties;
+
+    return (
+      <span
+        key={`${piece.left}-${piece.top}-${piece.size}-${index}`}
+        className={className}
+        style={style}
+      />
+    );
+  });
 }
