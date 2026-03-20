@@ -110,15 +110,15 @@
     "spotlight": "Good for petal motifs, quiet close-ups, and refined vertical compositions."
   },
   {
-    "id": "kyojuro-rengoku",
+    "id": "yoriichi-tsugikuni",
     "order": 11,
-    "name": "Kyojuro Rengoku",
-    "subtitle": "High-heat alternate hero portrait",
+    "name": "Yoriichi Tsugikuni",
+    "subtitle": "Sun-born calm and overwhelming precision",
     "affiliation": "Demon Slayer Corps",
-    "image": "/characters/kyojuro-rengoku-2.jpg",
-    "summary": "This version emphasizes pure flame spectacle, pushing Rengoku further into poster-grade intensity and theatrical motion.",
-    "abilities": ["Flame Burst", "Heroic Focus", "High Contrast Color"],
-    "spotlight": "Great for action banners, premium merch, and heightened event visuals."
+    "image": "/characters/yoriichi-tsugikuni.jpg",
+    "summary": "Yoriichi carries a sacred, untouchable level of swordsmanship that turns any composition into something mythic and absolute.",
+    "abilities": ["Sun Breathing", "Supreme Precision", "Legendary Presence"],
+    "spotlight": "Ideal for radiant blade trails, ancestral symbolism, and god-tier centerpiece illustrations."
   },
   {
     "id": "nezuko-kamado",
@@ -165,25 +165,25 @@
     "spotlight": "Strong for violet accents, graceful curves, and delicate-but-sharp visual storytelling."
   },
   {
-    "id": "kyojuro-rengoku",
+    "id": "kanae-kocho",
     "order": 16,
-    "name": "Kyojuro Rengoku",
-    "subtitle": "Secondary heroic composition study",
+    "name": "Kanae Kocho",
+    "subtitle": "Gentle grace with a dreamlike floral aura",
     "affiliation": "Demon Slayer Corps",
-    "image": "/characters/kyojuro-rengoku-3.jpg",
-    "summary": "An alternate Rengoku portrait that supports variation across the gallery without losing the core fiery identity.",
-    "abilities": ["Flame Presence", "Alternate Framing", "Campaign Variation"],
-    "spotlight": "Useful for comparing layout directions and building multi-version promotional sets."
+    "image": "/characters/kanae-kocho.jpg",
+    "summary": "Kanae softens the gallery with warmth, serenity, and an almost weightless elegance that feels luminous without losing presence.",
+    "abilities": ["Flower Grace", "Calm Presence", "Butterfly Motifs"],
+    "spotlight": "Perfect for soft violet palettes, floral motion, and airy portrait-led storytelling."
   },
   {
-    "id": "tanjiro-kamado",
+    "id": "genya-shinazugawa",
     "order": 17,
-    "name": "Tanjiro Kamado",
-    "subtitle": "Fiery escalation of the lead hero",
+    "name": "Genya Shinazugawa",
+    "subtitle": "Rough force and firearm-driven intensity",
     "affiliation": "Demon Slayer Corps",
-    "image": "/characters/tanjiro-kamado-2.jpg",
-    "summary": "This alternate Tanjiro image pushes the hero into a hotter, more aggressive visual mode suited for finale moments.",
-    "abilities": ["Fire Breathing", "Lead Hero Energy", "Combat Escalation"],
-    "spotlight": "Ideal for climactic callouts, launch banners, and more intense homepage storytelling."
+    "image": "/characters/genya-shinazugawa.jpg",
+    "summary": "Genya brings blunt aggression, grit, and a modern shock to the lineup, making him especially striking in darker action-heavy frames.",
+    "abilities": ["Shotgun Combat", "Brute Resolve", "Ferocious Survival"],
+    "spotlight": "Strong for red-black contrast, high-tension close-ups, and more violent promotional beats."
   }
 ]

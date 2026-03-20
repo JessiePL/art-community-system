@@ -54,26 +54,28 @@ export const characterHighlights = [
   },
 ];
 
-export const creatorMoments = [
-  {
-    year: "2023",
-    title: "IP-inspired illustration studies",
+export const creatorCredits = {
+  author: {
+    kicker: "Original Author",
+    name: "Koyoharu Gotouge",
+    image: "/Koyoharu Gotouge.jpg",
     description:
-      "Focused on anime poster composition, silhouette language, and fan-merch visual hierarchy.",
+      "Koyoharu Gotouge is the original manga creator of Demon Slayer. Their work established the emotional core, visual iconography, and character relationships that made the series resonate so strongly with readers.",
+    detail:
+      "This section focuses on the source creator behind the worldbuilding, sword styles, and dramatic tone that shaped the entire franchise.",
+    tags: ["Manga Creator", "Original Story", "Kimetsu no Yaiba"],
   },
-  {
-    year: "2024",
-    title: "Convention booth experiments",
+  studio: {
+    kicker: "Animation Studio",
+    name: "ufotable",
+    image: "/Ufotable_logo.svg.png",
     description:
-      "Tested small-batch prints, mugs, and wearable designs to learn what fans actually pick up.",
+      "ufotable is the animation studio responsible for the anime adaptation. Their production elevated the series through cinematic compositing, lighting, battle choreography, and highly polished effects work.",
+    detail:
+      "This card highlights the studio side of the project: the team that transformed the manga into the anime version recognized for its visual spectacle.",
+    tags: ["Anime Production", "Visual Effects", "Cinematic Adaptation"],
   },
-  {
-    year: "2025",
-    title: "Community-first concept direction",
-    description:
-      "Moved beyond portfolio pieces into a full experience: events, memberships, and narrative pages.",
-  },
-];
+};
 
 export const merchandiseCatalog: Array<{
   id: string;
@@ -83,6 +85,9 @@ export const merchandiseCatalog: Array<{
   stock: number;
   image: string;
   note: string;
+  lead?: string;
+  detail?: string;
+  sizeStock?: Partial<Record<"S" | "M" | "L" | "XL", number>>;
 }> = [
   {
     id: "merch-hashira-shirt",
@@ -92,6 +97,15 @@ export const merchandiseCatalog: Array<{
     stock: 24,
     image: "/t-shirt.png",
     note: "Heavyweight cotton tee designed as a statement launch piece.",
+    lead: "Wearable drop",
+    detail:
+      "A front-led apparel piece designed for daily styling, event wear, and statement fan looks.",
+    sizeStock: {
+      S: 5,
+      M: 8,
+      L: 7,
+      XL: 4,
+    },
   },
   {
     id: "merch-nezuko-mug",
@@ -101,6 +115,9 @@ export const merchandiseCatalog: Array<{
     stock: 31,
     image: "/mug.png",
     note: "Soft pink ceramic mug built for desk setups and collector shelves.",
+    lead: "Desk collectible",
+    detail:
+      "A practical display item for home setups, shelves, and daily use without losing the anime visual identity.",
   },
   {
     id: "merch-corps-bag",
@@ -110,6 +127,9 @@ export const merchandiseCatalog: Array<{
     stock: 18,
     image: "/bag.png",
     note: "Utility-focused tote with bold icon framing and convention-ready size.",
+    lead: "Carry essential",
+    detail:
+      "A roomy convention-ready tote built for sketchbooks, small purchases, and everyday fandom styling.",
   },
 ];
 

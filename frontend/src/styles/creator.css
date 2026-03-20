@@ -1,0 +1,111 @@
+.creator-page {
+  display: grid;
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  min-height: 0;
+  height: 100%;
+}
+
+.creator-feature-card {
+  display: grid;
+  grid-template-columns: minmax(240px, 340px) minmax(0, 1fr);
+  gap: 22px;
+  align-items: stretch;
+  padding: 22px;
+  border-radius: 28px;
+  min-height: 0;
+  height: 100%;
+}
+
+.creator-feature-card.reverse {
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 340px);
+}
+
+.creator-visual {
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+}
+
+.creator-visual img {
+  width: 100%;
+  height: auto;
+  max-height: 320px;
+  min-height: 0;
+  object-fit: contain;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.creator-visual.logo-panel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.03));
+}
+
+.creator-visual.logo-panel img {
+  min-height: 0;
+  max-height: 180px;
+  object-fit: contain;
+  background: transparent;
+  border-radius: 0;
+}
+
+.creator-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+  min-height: 0;
+  justify-content: center;
+}
+
+.creator-copy h2 {
+  margin: 0;
+  font-size: clamp(2rem, 3vw, 3.2rem);
+  line-height: 1.02;
+}
+
+.creator-copy p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 1rem;
+  line-height: 1.75;
+}
+
+.creator-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.creator-meta span {
+  border-radius: 999px;
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+@media (max-width: 900px) {
+  .creator-page {
+    grid-template-rows: none;
+    height: auto;
+  }
+
+  .creator-feature-card,
+  .creator-feature-card.reverse {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .creator-visual img {
+    min-height: 240px;
+  }
+}

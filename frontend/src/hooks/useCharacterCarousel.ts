@@ -16,6 +16,7 @@ export function useCharacterCarousel({
     null,
   );
   const [isCarouselPaused, setIsCarouselPaused] = useState(false);
+  const [effectBurstKey, setEffectBurstKey] = useState(0);
   const stripRef = useRef<HTMLDivElement | null>(null);
   const manualScrollTimeoutRef = useRef<number | null>(null);
   const isManualScrollingRef = useRef(false);
@@ -170,7 +171,8 @@ export function useCharacterCarousel({
     setSelectedCharacterId(characterId);
     setSelectedRenderIndex(renderIndex);
     setIsCarouselPaused(true);
-    onStatusChange("Character card expanded. Carousel motion paused.");
+    setEffectBurstKey((current) => current + 1);
+    onStatusChange("Welcome in. Take a look around and enjoy the character spotlight.");
   };
 
   const scrollGallery = (direction: "left" | "right") => {
@@ -224,6 +226,7 @@ export function useCharacterCarousel({
   return {
     isCarouselPaused,
     loopCharacters,
+    effectBurstKey,
     selectedCharacterId,
     selectedRenderIndex,
     stripRef,
