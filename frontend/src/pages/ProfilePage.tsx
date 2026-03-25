@@ -1,96 +1,33 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ChangeEvent } from "react";
-import type { AuthUser, Product } from "../types/app";
+import type { AddressRecord, AuthUser, OrderRecord, Product } from "../types/app";
 
 type ProfilePageProps = {
   user: AuthUser | null;
+  addresses: AddressRecord[];
+  orders: OrderRecord[];
   cartItems: Array<Product & { quantity: number; subtotal: number }>;
   onIncreaseCartItem: (product: Product) => void;
   onDecreaseCartItem: (product: Product) => void;
   onRemoveCartItem: (product: Product) => void;
   onCartCheckout: () => void;
+  onSaveAddress: (editingAddressId: string | null, draft: {
+    label: string;
+    recipient: string;
+    phone: string;
+    line1: string;
+    line2?: string;
+    city: string;
+    region: string;
+    postalCode: string;
+  }, fallbackName: string) => Promise<boolean>;
+  onRemoveAddress: (addressId: string) => Promise<void>;
+  onSetPrimaryAddress: (addressId: string) => Promise<void>;
+  onRequestReturn: (orderId: string, returnTrackingNumber: string) => Promise<unknown>;
+  onConfirmReceipt: (orderId: string) => Promise<unknown>;
+  onSaveProfile: (name: string, avatarUrl: string) => Promise<AuthUser>;
+  onChangePassword: (currentPassword: string, newPassword: string) => Promise<{ message: string }>;
 };
-
-type AddressRecord = {
-  id: string;
-  label: string;
-  recipient: string;
-  phone: string;
-  line1: string;
-  line2?: string;
-  city: string;
-  region: string;
-  postalCode: string;
-  isPrimary: boolean;
-};
-
-type OrderStatus = "In cart" | "Paid" | "Shipped" | "Return requested";
-
-type OrderRecord = {
-  id: string;
-  orderNumber: string;
-  trackingNumber?: string;
-  itemName: string;
-  quantity: number;
-  total: number;
-  status: OrderStatus;
-  eta: string;
-  detail: string;
-  image: string;
-};
-
-const initialAddresses: AddressRecord[] = [
-  {
-    id: "addr-home",
-    label: "Home",
-    recipient: "Jessie Chen",
-    phone: "(604) 555-0182",
-    line1: "1988 Main Street",
-    line2: "Unit 12",
-    city: "Vancouver",
-    region: "BC",
-    postalCode: "V5T 3C2",
-    isPrimary: true,
-  },
-  {
-    id: "addr-studio",
-    label: "Studio",
-    recipient: "Jessie Chen",
-    phone: "(604) 555-0117",
-    line1: "49 Water Street",
-    city: "Vancouver",
-    region: "BC",
-    postalCode: "V6B 1A1",
-    isPrimary: false,
-  },
-];
-
-const initialOrders: OrderRecord[] = [
-  {
-    id: "order-002",
-    orderNumber: "PAID-24002",
-    trackingNumber: "PKG-8Z41-2209",
-    itemName: "Nezuko Dawn Mug",
-    quantity: 1,
-    total: 24,
-    status: "Paid",
-    eta: "Packing in 1 business day",
-    detail: "Payment captured successfully. The warehouse team has queued this order for packing.",
-    image: "/mug.png",
-  },
-  {
-    id: "order-003",
-    orderNumber: "SHIP-24003",
-    trackingNumber: "TRK-BC24-90317",
-    itemName: "Corps Canvas Carry",
-    quantity: 1,
-    total: 29,
-    status: "Shipped",
-    eta: "Arriving Mar 24",
-    detail: "Tracking label created. The tote has already left the Vancouver dispatch hub.",
-    image: "/bag.png",
-  },
-];
 
 const emptyAddressDraft = {
   label: "",
@@ -103,19 +40,34 @@ const emptyAddressDraft = {
   postalCode: "",
 };
 
+const readFileAsDataUrl = (file: File) =>
+  new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(typeof reader.result === "string" ? reader.result : "");
+    reader.onerror = () => reject(new Error("Unable to read the selected image."));
+    reader.readAsDataURL(file);
+  });
+
 export default function ProfilePage({
   user,
+  addresses,
+  orders,
   cartItems,
   onIncreaseCartItem,
   onDecreaseCartItem,
   onRemoveCartItem,
   onCartCheckout,
+  onSaveAddress,
+  onRemoveAddress,
+  onSetPrimaryAddress,
+  onRequestReturn,
+  onConfirmReceipt,
+  onSaveProfile,
+  onChangePassword,
 }: ProfilePageProps) {
   const [displayName, setDisplayName] = useState(user?.name ?? "Guest Viewer");
-  const [avatarUrl, setAvatarUrl] = useState("/693aebc11ce502fda14fda3648cbfb4d.png");
+  const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl ?? "/693aebc11ce502fda14fda3648cbfb4d.png");
   const [isEditingName, setIsEditingName] = useState(false);
-  const [addresses, setAddresses] = useState<AddressRecord[]>(initialAddresses);
-  const [orders, setOrders] = useState<OrderRecord[]>(initialOrders);
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
@@ -126,39 +78,49 @@ export default function ProfilePage({
   const [nextPassword, setNextPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordFeedback, setPasswordFeedback] = useState("");
+  const [profileFeedback, setProfileFeedback] = useState("");
+  const [returnDrafts, setReturnDrafts] = useState<Record<string, string>>({});
   const avatarInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    setDisplayName(user?.name ?? "Guest Viewer");
+    setAvatarUrl(user?.avatarUrl ?? "/693aebc11ce502fda14fda3648cbfb4d.png");
+  }, [user?.avatarUrl, user?.name]);
 
   const primaryAddress =
     addresses.find((address) => address.isPrimary) ?? addresses[0] ?? null;
   const membershipLabel =
-    user?.role === "member" || user?.role === "admin" ? "Member" : "Non-member";
-  const membershipLevel = user?.role === "member" || user?.role === "admin" ? "Level 3" : "Level 0";
+    user?.isMember ? "Member" : "Non-member";
+  const membershipLevel = user?.isMember ? `Level ${user.membershipLevel || 1}` : "Level 0";
   const cartOrders: OrderRecord[] = cartItems.map((item) => ({
-    id: `cart-${item.id}`,
-    orderNumber: `CART-${item.id.replace("merch-", "").toUpperCase()}`,
+    id: `cart-${item.id}-${item.selectedSize ?? "default"}`,
+    orderNumber: `CART-${item.id.toUpperCase()}${item.selectedSize ? `-${item.selectedSize}` : ""}`,
     itemName: item.name,
     quantity: item.quantity,
     total: item.subtotal,
     status: "In cart",
     eta: "Ready in your shopping cart",
-    detail: `${item.note} This item is still waiting in your cart.`,
+    detail: `${item.note}${item.selectedSize ? ` Selected size: ${item.selectedSize}.` : ""} This item is still waiting in your cart.`,
     image: item.image,
+    selectedSize: item.selectedSize,
   }));
-  const orderRecords = [
-    ...cartOrders,
-    ...orders.map((order) => ({
-      ...order,
-      orderNumber:
-        order.orderNumber || order.id.replace("order-", "ORDER-").toUpperCase(),
-      trackingNumber:
-        order.trackingNumber ||
-        (order.status === "Paid"
-          ? `PKG-${order.id.replace("order-", "").toUpperCase()}`
-          : order.status === "Shipped"
-            ? `TRK-${order.id.replace("order-", "").toUpperCase()}`
-            : undefined),
-    })),
-  ];
+  const orderRecords = [...cartOrders, ...orders];
+
+  const buildOrderDetail = (order: OrderRecord) => {
+    if (order.status !== "Completed") {
+      return order.detail;
+    }
+
+    const normalizedDetail = order.detail.startsWith("Shipping to ")
+      ? `Delivered to ${order.detail.slice("Shipping to ".length)}`
+      : order.detail;
+
+    const receiptLine = order.trackingNumber
+      ? ` Buyer confirmed receipt. Outbound code # ${order.trackingNumber}.`
+      : " Buyer confirmed receipt and this order is fully completed.";
+
+    return `${normalizedDetail}${receiptLine}`;
+  };
 
   const openAddressModal = (address?: AddressRecord) => {
     if (address) {
@@ -178,6 +140,7 @@ export default function ProfilePage({
       setAddressDraft(emptyAddressDraft);
     }
 
+    setProfileFeedback("");
     setIsAddressModalOpen(true);
   };
 
@@ -187,96 +150,46 @@ export default function ProfilePage({
     setAddressDraft(emptyAddressDraft);
   };
 
-  const saveAddress = () => {
-    const normalizedDraft = {
-      label: addressDraft.label.trim() || "New Address",
-      recipient: addressDraft.recipient.trim() || displayName,
-      phone: addressDraft.phone.trim() || "(604) 555-0100",
-      line1: addressDraft.line1.trim(),
-      line2: addressDraft.line2.trim(),
-      city: addressDraft.city.trim(),
-      region: addressDraft.region.trim(),
-      postalCode: addressDraft.postalCode.trim(),
-    };
+  const saveAddress = async () => {
+    try {
+      const didSave = await onSaveAddress(editingAddressId, addressDraft, displayName);
+      if (!didSave) {
+        setProfileFeedback("Address line 1, city, and region are required.");
+        return;
+      }
 
-    if (!normalizedDraft.line1 || !normalizedDraft.city || !normalizedDraft.region) {
-      return;
+      setProfileFeedback(editingAddressId ? "Address updated successfully." : "Address added successfully.");
+      closeAddressModal();
+    } catch (error) {
+      setProfileFeedback(error instanceof Error ? error.message : "Unable to save this address.");
     }
-
-    setAddresses((current) => {
-      if (editingAddressId) {
-        return current.map((address) =>
-          address.id === editingAddressId
-            ? {
-                ...address,
-                ...normalizedDraft,
-              }
-            : address,
-        );
-      }
-
-      return [
-        ...current,
-        {
-          id: `addr-${Date.now()}`,
-          ...normalizedDraft,
-          isPrimary: current.length === 0,
-        },
-      ];
-    });
-
-    closeAddressModal();
   };
 
-  const removeAddress = (addressId: string) => {
-    setAddresses((current) => {
-      const remaining = current.filter((address) => address.id !== addressId);
-
-      if (!remaining.some((address) => address.isPrimary) && remaining[0]) {
-        remaining[0] = {
-          ...remaining[0],
-          isPrimary: true,
-        };
-      }
-
-      return remaining;
-    });
-  };
-
-  const setPrimaryAddress = (addressId: string) => {
-    setAddresses((current) =>
-      current.map((address) => ({
-        ...address,
-        isPrimary: address.id === addressId,
-      })),
-    );
-  };
-
-  const requestReturn = (orderId: string) => {
-    setOrders((current) =>
-      current.map((order) =>
-        order.id === orderId
-          ? {
-              ...order,
-              status: "Return requested",
-              eta: "Return review started",
-              detail:
-                "Your return request has been recorded. A follow-up message will confirm next steps.",
-            }
-          : order,
-      ),
-    );
-  };
-
-  const handleAvatarUpload = (event: ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarUpload = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-
     if (!file) {
       return;
     }
 
-    const nextAvatarUrl = URL.createObjectURL(file);
-    setAvatarUrl(nextAvatarUrl);
+    try {
+      const nextAvatarUrl = await readFileAsDataUrl(file);
+      setAvatarUrl(nextAvatarUrl);
+      setProfileFeedback("Avatar updated locally. Save profile to persist it.");
+    } catch (error) {
+      setProfileFeedback(error instanceof Error ? error.message : "Unable to read this image.");
+    }
+  };
+
+  const saveProfile = async () => {
+    try {
+      const nextUser = await onSaveProfile(displayName, avatarUrl);
+      setDisplayName(nextUser.name);
+      setAvatarUrl(nextUser.avatarUrl);
+      setIsEditingName(false);
+      setProfileFeedback("Profile updated successfully.");
+    } catch (error) {
+      setProfileFeedback(error instanceof Error ? error.message : "Unable to update your profile.");
+    }
   };
 
   const closePasswordModal = () => {
@@ -287,7 +200,7 @@ export default function ProfilePage({
     setPasswordFeedback("");
   };
 
-  const submitPasswordChange = () => {
+  const submitPasswordChange = async () => {
     if (!currentPassword.trim() || !nextPassword.trim() || !confirmPassword.trim()) {
       setPasswordFeedback("Please complete all password fields.");
       return;
@@ -298,10 +211,58 @@ export default function ProfilePage({
       return;
     }
 
-    setPasswordFeedback("Password updated successfully.");
-    window.setTimeout(() => {
-      closePasswordModal();
-    }, 900);
+    try {
+      const response = await onChangePassword(currentPassword, nextPassword);
+      setPasswordFeedback(response.message);
+      window.setTimeout(() => {
+        closePasswordModal();
+      }, 900);
+    } catch (error) {
+      setPasswordFeedback(error instanceof Error ? error.message : "Unable to update password.");
+    }
+  };
+
+  const handleConfirmReceipt = async (orderId: string) => {
+    try {
+      await onConfirmReceipt(orderId);
+      setProfileFeedback("Receipt confirmed successfully.");
+    } catch (error) {
+      setProfileFeedback(error instanceof Error ? error.message : "Unable to confirm receipt.");
+    }
+  };
+
+  const handleRequestReturn = async (orderId: string) => {
+    const draft = returnDrafts[orderId]?.trim();
+    if (!draft) {
+      setProfileFeedback("Return shipping code is required before requesting a return.");
+      return;
+    }
+
+    try {
+      await onRequestReturn(orderId, draft);
+      setReturnDrafts((current) => ({ ...current, [orderId]: "" }));
+      setProfileFeedback("Return request submitted successfully.");
+    } catch (error) {
+      setProfileFeedback(error instanceof Error ? error.message : "Unable to request a return.");
+    }
+  };
+
+  const handleRemoveAddress = async (addressId: string) => {
+    try {
+      await onRemoveAddress(addressId);
+      setProfileFeedback("Address removed successfully.");
+    } catch (error) {
+      setProfileFeedback(error instanceof Error ? error.message : "Unable to remove this address.");
+    }
+  };
+
+  const handleSetPrimaryAddress = async (addressId: string) => {
+    try {
+      await onSetPrimaryAddress(addressId);
+      setProfileFeedback("Primary address updated successfully.");
+    } catch (error) {
+      setProfileFeedback(error instanceof Error ? error.message : "Unable to update the primary address.");
+    }
   };
 
   return (
@@ -333,7 +294,6 @@ export default function ProfilePage({
                 <input
                   value={displayName}
                   onChange={(event) => setDisplayName(event.target.value)}
-                  onBlur={() => setIsEditingName(false)}
                   placeholder="Display name"
                   autoFocus
                 />
@@ -356,8 +316,11 @@ export default function ProfilePage({
                 className="profile-hidden-input"
                 type="file"
                 accept="image/*"
-                onChange={handleAvatarUpload}
+                onChange={(event) => void handleAvatarUpload(event)}
               />
+              <button className="ghost-button" type="button" onClick={() => void saveProfile()}>
+                Save profile
+              </button>
               <button
                 className="ghost-button"
                 type="button"
@@ -404,6 +367,8 @@ export default function ProfilePage({
         </article>
       </section>
 
+      {profileFeedback ? <p className="profile-modal-note">{profileFeedback}</p> : null}
+
       <section className="glass-card profile-orders-panel">
         <div className="profile-card-head">
           <div>
@@ -424,14 +389,20 @@ export default function ProfilePage({
                     <strong>{order.itemName}</strong>
                     <p>
                       Qty {order.quantity} · Total ${order.total}
+                      {order.selectedSize ? ` · Size ${order.selectedSize}` : ""}
                     </p>
                     <span>{order.eta}</span>
                     <span className="profile-order-number">
-                      Order # {order.orderNumber || order.id.toUpperCase()}
+                      Order # {order.orderNumber}
                     </span>
                     {order.trackingNumber ? (
                       <span className="profile-order-tracking">
-                        Tracking # {order.trackingNumber}
+                        Outbound code # {order.trackingNumber}
+                      </span>
+                    ) : null}
+                    {order.returnTrackingNumber ? (
+                      <span className="profile-order-tracking">
+                        Return code # {order.returnTrackingNumber}
                       </span>
                     ) : null}
                   </div>
@@ -447,7 +418,9 @@ export default function ProfilePage({
                     {order.status === "In cart" ? (
                       <>
                         {(() => {
-                          const cartProduct = cartItems.find((item) => `cart-${item.id}` === order.id);
+                          const cartProduct = cartItems.find(
+                            (item) => `cart-${item.id}-${item.selectedSize ?? "default"}` === order.id,
+                          );
 
                           if (!cartProduct) {
                             return null;
@@ -486,21 +459,11 @@ export default function ProfilePage({
                       </>
                     ) : (
                       <>
-                        <button
-                          className="profile-order-icon-button"
-                          type="button"
-                          disabled
-                          aria-hidden="true"
-                        >
+                        <button className="profile-order-icon-button" type="button" disabled aria-hidden="true">
                           -
                         </button>
                         <span className="profile-order-qty-value">{order.quantity}</span>
-                        <button
-                          className="profile-order-icon-button"
-                          type="button"
-                          disabled
-                          aria-hidden="true"
-                        >
+                        <button className="profile-order-icon-button" type="button" disabled aria-hidden="true">
                           +
                         </button>
                         <button
@@ -516,11 +479,7 @@ export default function ProfilePage({
                   </div>
 
                   {order.status === "In cart" ? (
-                    <button
-                      className="primary-button profile-order-pay"
-                      type="button"
-                      onClick={onCartCheckout}
-                    >
+                    <button className="primary-button profile-order-pay" type="button" onClick={onCartCheckout}>
                       Pay
                     </button>
                   ) : (
@@ -528,28 +487,45 @@ export default function ProfilePage({
                       <button
                         className="ghost-button"
                         type="button"
-                        onClick={() =>
-                          setExpandedOrderId((current) => (current === order.id ? null : order.id))
-                        }
+                        onClick={() => setExpandedOrderId((current) => (current === order.id ? null : order.id))}
                       >
                         Details
                       </button>
-                      <button
-                        className="ghost-button"
-                        type="button"
-                        disabled={order.status === "Return requested"}
-                        onClick={() => requestReturn(order.id)}
-                      >
-                        Return
-                      </button>
+                      {order.status === "Shipped" ? (
+                        <button
+                          className="ghost-button"
+                          type="button"
+                          onClick={() => void handleConfirmReceipt(order.id)}
+                        >
+                          Confirm receipt
+                        </button>
+                      ) : null}
                     </div>
                   )}
                 </div>
               </div>
 
+              {order.status === "Shipped" ? (
+                <div className="profile-inline-actions" style={{ marginTop: 12 }}>
+                  <input
+                    value={returnDrafts[order.id] ?? ""}
+                    onChange={(event) =>
+                      setReturnDrafts((current) => ({
+                        ...current,
+                        [order.id]: event.target.value,
+                      }))
+                    }
+                    placeholder="Enter return shipping code"
+                  />
+                  <button className="ghost-button" type="button" onClick={() => void handleRequestReturn(order.id)}>
+                    Request return
+                  </button>
+                </div>
+              ) : null}
+
               {order.status !== "In cart" && expandedOrderId === order.id ? (
                 <div className="profile-order-detail">
-                  <p>{order.detail}</p>
+                  <p>{buildOrderDetail(order)}</p>
                 </div>
               ) : null}
             </article>
@@ -581,25 +557,13 @@ export default function ProfilePage({
                     </p>
                   </div>
                   <div className="profile-inline-actions">
-                    <button
-                      className="ghost-button"
-                      type="button"
-                      onClick={() => setPrimaryAddress(address.id)}
-                    >
+                    <button className="ghost-button" type="button" onClick={() => void handleSetPrimaryAddress(address.id)}>
                       {address.isPrimary ? "Primary" : "Set primary"}
                     </button>
-                    <button
-                      className="ghost-button"
-                      type="button"
-                      onClick={() => openAddressModal(address)}
-                    >
+                    <button className="ghost-button" type="button" onClick={() => openAddressModal(address)}>
                       Edit
                     </button>
-                    <button
-                      className="ghost-button"
-                      type="button"
-                      onClick={() => removeAddress(address.id)}
-                    >
+                    <button className="ghost-button" type="button" onClick={() => void handleRemoveAddress(address.id)}>
                       Delete
                     </button>
                   </div>
@@ -697,7 +661,7 @@ export default function ProfilePage({
             </div>
 
             <div className="profile-inline-actions">
-              <button className="primary-button" type="button" onClick={saveAddress}>
+              <button className="primary-button" type="button" onClick={() => void saveAddress()}>
                 {editingAddressId ? "Save address" : "Add address"}
               </button>
               <button className="ghost-button" type="button" onClick={closeAddressModal}>
@@ -754,7 +718,7 @@ export default function ProfilePage({
             {passwordFeedback ? <p className="profile-modal-note">{passwordFeedback}</p> : null}
 
             <div className="profile-inline-actions">
-              <button className="primary-button" type="button" onClick={submitPasswordChange}>
+              <button className="primary-button" type="button" onClick={() => void submitPasswordChange()}>
                 Save password
               </button>
               <button className="ghost-button" type="button" onClick={closePasswordModal}>

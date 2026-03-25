@@ -1,14 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import type { ChangeEvent } from "react";
+import type { ProductEditorDraft } from "../hooks/useMerchState";
 import "../styles/merch.css";
-import type { Product } from "../types/app";
+import type { Product, ShirtSize } from "../types/app";
 
 type CartItem = Product & {
   quantity: number;
   subtotal: number;
 };
-
-type ShirtSize = "S" | "M" | "L" | "XL";
 
 type ShopPageProps = {
   products: Product[];
@@ -16,16 +15,15 @@ type ShopPageProps = {
   isLoggedIn: boolean;
   cartItems: CartItem[];
   cartTotal: number;
-  onAddToCart: (product: Product) => void;
+  onAddToCart: (product: Product, selectedSize?: ShirtSize) => boolean;
   onIncreaseCartItem: (product: Product) => void;
   onDecreaseCartItem: (product: Product) => void;
   onRemoveCartItem: (product: Product) => void;
-  onBuyNow: (product: Product) => void;
+  onBuyNow: (product: Product, selectedSize?: ShirtSize) => void;
   onCartCheckout: () => void;
-  onUpdateProductField: (productId: string, field: keyof Product, value: string | number) => void;
-  onRestockProduct: (productId: string, amount: number, size?: ShirtSize) => void;
-  onUpdateProductImage: (productId: string, imageUrl: string) => void;
-  onUpdateProductSizeStock: (productId: string, size: ShirtSize, stock: number) => void;
+  onRequireLogin: () => void;
+  onSaveProduct: (productId: string, draft: ProductEditorDraft) => Promise<Product>;
+  onUploadProductImage: (file: File) => Promise<string>;
 };
 
 const shirtSizes: ShirtSize[] = ["S", "M", "L", "XL"];
@@ -66,20 +64,24 @@ export default function ShopPage({
   onRemoveCartItem,
   onBuyNow,
   onCartCheckout,
-  onUpdateProductField,
-  onUpdateProductImage,
-  onUpdateProductSizeStock,
+  onRequireLogin,
+  onSaveProduct,
+  onUploadProductImage,
 }: ShopPageProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [selectedSize, setSelectedSize] = useState<ShirtSize>("M");
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const [editDraft, setEditDraft] = useState({
+  const [isSavingProduct, setIsSavingProduct] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [saveError, setSaveError] = useState("");
+  const [editDraft, setEditDraft] = useState<ProductEditorDraft>({
     name: "",
     price: "",
     lead: "",
     note: "",
     detail: "",
+    image: "",
     stock: "",
     S: "",
     M: "",
@@ -101,6 +103,19 @@ export default function ShopPage({
     eyebrow: activeProduct.lead ?? merchCopy[activeProduct.category].eyebrow,
     detail: activeProduct.detail ?? merchCopy[activeProduct.category].detail,
   };
+  const activeStock =
+    activeProduct.category === "T-shirt"
+      ? activeProduct.sizeStock?.[selectedSize] ?? 0
+      : activeProduct.stock;
+  const isSoldOut = activeStock <= 0;
+  const selectedPurchaseSize = activeProduct.category === "T-shirt" ? selectedSize : undefined;
+  const sizeStockSummary =
+    activeProduct.category === "T-shirt"
+      ? shirtSizes.map((size) => ({
+          size,
+          stock: activeProduct.sizeStock?.[size] ?? 0,
+        }))
+      : [];
 
   useEffect(() => {
     setEditDraft({
@@ -109,13 +124,28 @@ export default function ShopPage({
       lead: activeCopy.eyebrow,
       note: activeProduct.note,
       detail: activeCopy.detail,
+      image: activeProduct.image,
       stock: String(activeProduct.stock),
       S: String(activeProduct.sizeStock?.S ?? 0),
       M: String(activeProduct.sizeStock?.M ?? 0),
       L: String(activeProduct.sizeStock?.L ?? 0),
       XL: String(activeProduct.sizeStock?.XL ?? 0),
     });
-  }, [activeProduct.id, activeProduct.name, activeProduct.price, activeProduct.note, activeProduct.stock, activeCopy.eyebrow, activeCopy.detail, activeProduct.sizeStock?.S, activeProduct.sizeStock?.M, activeProduct.sizeStock?.L, activeProduct.sizeStock?.XL]);
+    setSaveError("");
+  }, [
+    activeProduct.id,
+    activeProduct.image,
+    activeProduct.name,
+    activeProduct.note,
+    activeProduct.price,
+    activeProduct.sizeStock?.L,
+    activeProduct.sizeStock?.M,
+    activeProduct.sizeStock?.S,
+    activeProduct.sizeStock?.XL,
+    activeProduct.stock,
+    activeCopy.detail,
+    activeCopy.eyebrow,
+  ]);
 
   const handlePrevious = () => {
     setActiveIndex((current) => (current - 1 + products.length) % products.length);
@@ -126,42 +156,85 @@ export default function ShopPage({
   };
 
   const handleAddToCart = () => {
-    onAddToCart(activeProduct);
-    setIsCartOpen(true);
+    if (isSoldOut) {
+      return;
+    }
+
+    if (!isLoggedIn) {
+      onRequireLogin();
+      return;
+    }
+
+    const added = onAddToCart(activeProduct, selectedPurchaseSize);
+    if (added) {
+      setIsCartOpen(true);
+    }
   };
 
   const handleBuyNow = () => {
-    onBuyNow(activeProduct);
-    setIsCartOpen(true);
+    if (isSoldOut) {
+      return;
+    }
+
+    if (!isLoggedIn) {
+      onRequireLogin();
+      return;
+    }
+
+    onBuyNow(activeProduct, selectedPurchaseSize);
   };
 
-  const handleImageUpload = (event: ChangeEvent<HTMLInputElement>) => {
+  const handleCartToggle = () => {
+    if (!isLoggedIn) {
+      onRequireLogin();
+      return;
+    }
+
+    setIsCartOpen((current) => !current);
+  };
+
+  const handlePayNow = () => {
+    if (!isLoggedIn) {
+      onRequireLogin();
+      return;
+    }
+
+    onCartCheckout();
+  };
+
+  const handleImageUpload = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
 
     if (!file) {
       return;
     }
 
-    const nextImageUrl = URL.createObjectURL(file);
-    onUpdateProductImage(activeProduct.id, nextImageUrl);
+    try {
+      setIsUploadingImage(true);
+      setSaveError("");
+      const imageUrl = await onUploadProductImage(file);
+      setEditDraft((current) => ({ ...current, image: imageUrl }));
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : "Image upload failed.");
+    } finally {
+      setIsUploadingImage(false);
+      if (imageInputRef.current) {
+        imageInputRef.current.value = "";
+      }
+    }
   };
 
-  const handleSaveProduct = () => {
-    onUpdateProductField(activeProduct.id, "name", editDraft.name.trim());
-    onUpdateProductField(activeProduct.id, "price", Number(editDraft.price) || activeProduct.price);
-    onUpdateProductField(activeProduct.id, "lead", editDraft.lead.trim());
-    onUpdateProductField(activeProduct.id, "note", editDraft.note.trim());
-    onUpdateProductField(activeProduct.id, "detail", editDraft.detail.trim());
-
-    if (activeProduct.category === "T-shirt") {
-      shirtSizes.forEach((size) => {
-        onUpdateProductSizeStock(activeProduct.id, size, Number(editDraft[size]) || 0);
-      });
-    } else {
-      onUpdateProductField(activeProduct.id, "stock", Number(editDraft.stock) || activeProduct.stock);
+  const handleSaveProduct = async () => {
+    try {
+      setIsSavingProduct(true);
+      setSaveError("");
+      await onSaveProduct(activeProduct.id, editDraft);
+      setIsEditOpen(false);
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : "Product save failed.");
+    } finally {
+      setIsSavingProduct(false);
     }
-
-    setIsEditOpen(false);
   };
 
   return (
@@ -221,7 +294,15 @@ export default function ShopPage({
 
               <div className="merch-meta-row">
                 <span>${activeProduct.price}</span>
-                <span>Stock {activeProduct.stock}</span>
+                {!isAdmin ? (
+                  <span>{isSoldOut ? "Sold out" : `Stock ${activeStock}${selectedPurchaseSize ? ` (${selectedPurchaseSize})` : ""}`}</span>
+                ) : activeProduct.category === "T-shirt" ? (
+                  sizeStockSummary.map((entry) => (
+                    <span key={entry.size}>{entry.size} {entry.stock}</span>
+                  ))
+                ) : (
+                  <span>{activeProduct.stock <= 0 ? "Sold out" : `Stock ${activeProduct.stock}`}</span>
+                )}
               </div>
 
               {!isAdmin ? (
@@ -232,9 +313,7 @@ export default function ShopPage({
                         <button
                           key={size}
                           type="button"
-                          className={
-                            selectedSize === size ? "merch-size-chip active" : "merch-size-chip"
-                          }
+                          className={selectedSize === size ? "merch-size-chip active" : "merch-size-chip"}
                           onClick={() => setSelectedSize(size)}
                         >
                           {size}
@@ -250,28 +329,19 @@ export default function ShopPage({
                       className="primary-button"
                       type="button"
                       onClick={handleAddToCart}
+                      disabled={isSoldOut}
                     >
-                      Add to Cart
+                      {isSoldOut ? "Out of Stock" : "Add to Cart"}
                     </button>
                     <button
                       className="ghost-button"
                       type="button"
                       onClick={handleBuyNow}
+                      disabled={isSoldOut}
                     >
-                      Buy Now
+                      {isSoldOut ? "Unavailable" : "Buy Now"}
                     </button>
                   </div>
-                </div>
-              ) : null}
-
-              {!isAdmin && !isLoggedIn ? (
-                <div className="merch-footer-note">
-                  <span>
-                    {activeProduct.category === "T-shirt"
-                      ? `Selected Size ${selectedSize}`
-                      : "Single standard edition"}
-                  </span>
-                  <span>Total in cart ${cartTotal}</span>
                 </div>
               ) : null}
             </div>
@@ -289,91 +359,68 @@ export default function ShopPage({
       </section>
 
       {!isAdmin ? (
-        <aside className={isCartOpen ? "merch-cart-dock open" : "merch-cart-dock"}>
-          {isCartOpen && (
-            <div className="glass-card merch-cart-panel">
+        <div className={isCartOpen ? "merch-cart-dock open" : "merch-cart-dock"}>
+          <button className="merch-cart-fab" type="button" onClick={handleCartToggle} aria-label="Open cart">
+            <span className="merch-cart-icon">
+              <img src="/carts.png" alt="" />
+            </span>
+            {isLoggedIn && cartItemCount > 0 ? <span className="merch-cart-badge">{cartItemCount}</span> : null}
+          </button>
+
+          {isCartOpen ? (
+            <section className="glass-card merch-cart-panel">
               <div className="merch-cart-header">
                 <div>
                   <p className="eyebrow">Shopping Cart</p>
-                  <strong>{cartItemCount} item(s)</strong>
+                  <h3>{cartItemCount} item(s)</h3>
                 </div>
-                <span>Total ${cartTotal}</span>
+                <button className="ghost-button" type="button" onClick={() => setIsCartOpen(false)}>
+                  Close
+                </button>
               </div>
 
-              {cartItems.length > 0 ? (
-                <div className="merch-cart-list">
-                  {cartItems.map((item) => (
-                    <article key={item.id} className="merch-cart-row">
+              <div className="merch-cart-items">
+                {cartItems.length > 0 ? (
+                  cartItems.map((item) => (
+                    <article key={`${item.id}-${item.selectedSize ?? "default"}`} className="merch-cart-row">
                       <div className="merch-cart-item-main">
                         <img src={item.image} alt={item.name} />
                         <div className="merch-cart-copy">
                           <strong>{item.name}</strong>
                           <span>
                             Qty {item.quantity} · ${item.subtotal}
+                            {item.selectedSize ? ` · Size ${item.selectedSize}` : ""}
                           </span>
                         </div>
                       </div>
-
-                      <div className="merch-cart-item-controls" aria-label={`Adjust ${item.name}`}>
-                        <button
-                          className="merch-cart-icon-button"
-                          type="button"
-                          aria-label={`Decrease ${item.name}`}
-                          onClick={() => onDecreaseCartItem(item)}
-                        >
+                      <div className="merch-cart-item-controls">
+                        <button className="merch-cart-icon-button" type="button" onClick={() => onDecreaseCartItem(item)}>
                           -
                         </button>
-                        <span className="merch-cart-quantity" aria-live="polite">
-                          {item.quantity}
-                        </span>
-                        <button
-                          className="merch-cart-icon-button"
-                          type="button"
-                          aria-label={`Increase ${item.name}`}
-                          onClick={() => onIncreaseCartItem(item)}
-                        >
+                        <span className="merch-cart-quantity">{item.quantity}</span>
+                        <button className="merch-cart-icon-button" type="button" onClick={() => onIncreaseCartItem(item)}>
                           +
                         </button>
-                        <button
-                          className="merch-cart-icon-button remove"
-                          type="button"
-                          aria-label={`Remove ${item.name}`}
-                          onClick={() => onRemoveCartItem(item)}
-                        >
-                          <img src="/bin.png" alt="" />
+                        <button className="merch-cart-icon-button remove" type="button" onClick={() => onRemoveCartItem(item)}>
+                          <img src="/bin.png" alt="Remove" />
                         </button>
                       </div>
                     </article>
-                  ))}
-                </div>
-              ) : (
-                <p className="merch-cart-empty">Your cart is empty for now.</p>
-              )}
+                  ))
+                ) : (
+                  <p className="merch-cart-empty">Your cart is empty.</p>
+                )}
+              </div>
 
-              <button
-                className="primary-button merch-cart-pay-button"
-                type="button"
-                onClick={onCartCheckout}
-                disabled={cartItems.length === 0}
-              >
-                Pay Now
-              </button>
-            </div>
-          )}
-
-          <button
-            className="merch-cart-fab"
-            type="button"
-            aria-expanded={isCartOpen}
-            aria-label={isCartOpen ? "Hide shopping cart" : "Show shopping cart"}
-            onClick={() => setIsCartOpen((current) => !current)}
-          >
-            <span className="merch-cart-icon" aria-hidden="true">
-              <img src="/carts.png" alt="" />
-            </span>
-            <span className="merch-cart-badge">{cartItemCount}</span>
-          </button>
-        </aside>
+              <div className="merch-cart-footer">
+                <strong>Total ${cartTotal}</strong>
+                <button className="primary-button merch-cart-pay-button" type="button" onClick={handlePayNow}>
+                  Pay Now
+                </button>
+              </div>
+            </section>
+          ) : null}
+        </div>
       ) : null}
 
       {isAdmin && isEditOpen ? (
@@ -384,102 +431,108 @@ export default function ShopPage({
           >
             <div className="auth-modal-header">
               <div>
-                <p className="eyebrow">Product editor</p>
+                <p className="eyebrow">Product Edit</p>
                 <h3>{activeProduct.name}</h3>
-                <p className="muted-copy">Update product basics, stock, sizes, and image in one place.</p>
               </div>
               <button className="ghost-button" type="button" onClick={() => setIsEditOpen(false)}>
                 Close
               </button>
             </div>
 
-            <div className="auth-form merch-admin-form">
-              <label className="auth-field">
+            <div className="merch-admin-image-panel">
+              <img src={editDraft.image || activeProduct.image} alt={activeProduct.name} />
+              <div className="merch-admin-image-actions">
+                <input
+                  ref={imageInputRef}
+                  type="file"
+                  accept="image/*"
+                  hidden
+                  onChange={(event) => void handleImageUpload(event)}
+                />
+                <button
+                  className="ghost-button"
+                  type="button"
+                  onClick={() => imageInputRef.current?.click()}
+                  disabled={isUploadingImage}
+                >
+{isUploadingImage ? "Uploading..." : "Upload new image"}
+                </button>
+              </div>
+            </div>
+
+            <div className="merch-admin-form-grid">
+              <label>
                 <span>Name</span>
                 <input
                   value={editDraft.name}
                   onChange={(event) => setEditDraft((current) => ({ ...current, name: event.target.value }))}
                 />
               </label>
-              <label className="auth-field">
+              <label>
                 <span>Price</span>
                 <input
                   type="number"
+                  min="0"
                   value={editDraft.price}
                   onChange={(event) => setEditDraft((current) => ({ ...current, price: event.target.value }))}
                 />
               </label>
-              <label className="auth-field">
+              <label>
                 <span>Lead</span>
                 <input
                   value={editDraft.lead}
                   onChange={(event) => setEditDraft((current) => ({ ...current, lead: event.target.value }))}
                 />
               </label>
-              <label className="auth-field">
+              <label>
                 <span>Note</span>
-                <input
+                <textarea
                   value={editDraft.note}
                   onChange={(event) => setEditDraft((current) => ({ ...current, note: event.target.value }))}
                 />
               </label>
-              <label className="auth-field">
+              <label>
                 <span>Detail</span>
-                <input
+                <textarea
                   value={editDraft.detail}
                   onChange={(event) => setEditDraft((current) => ({ ...current, detail: event.target.value }))}
                 />
               </label>
-
-              {activeProduct.category === "T-shirt" ? (
-                <div className="merch-admin-size-grid">
-                  {shirtSizes.map((size) => (
-                    <label key={size} className="auth-field">
-                      <span>{size} stock</span>
-                      <input
-                        type="number"
-                        value={editDraft[size]}
-                        onChange={(event) =>
-                          setEditDraft((current) => ({ ...current, [size]: event.target.value }))
-                        }
-                      />
-                    </label>
-                  ))}
-                </div>
-              ) : (
-                <label className="auth-field">
-                  <span>Stock</span>
-                  <input
-                    type="number"
-                    value={editDraft.stock}
-                    onChange={(event) => setEditDraft((current) => ({ ...current, stock: event.target.value }))}
-                  />
-                </label>
-              )}
-
-              <div className="merch-admin-image-row">
-                <input
-                  ref={imageInputRef}
-                  className="merch-admin-hidden-input"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                />
-                <button
-                  className="ghost-button"
-                  type="button"
-                  onClick={() => imageInputRef.current?.click()}
-                >
-                  Update image
-                </button>
-              </div>
             </div>
 
+            {activeProduct.category === "T-shirt" ? (
+              <div className="merch-admin-size-grid">
+                {shirtSizes.map((size) => (
+                  <label key={size}>
+                    <span>{size} stock</span>
+                    <input
+                      type="number"
+                      min="0"
+                      value={editDraft[size]}
+                      onChange={(event) => setEditDraft((current) => ({ ...current, [size]: event.target.value }))}
+                    />
+                  </label>
+                ))}
+              </div>
+            ) : (
+              <label className="merch-admin-stock-field">
+                <span>Stock</span>
+                <input
+                  type="number"
+                  min="0"
+                  value={editDraft.stock}
+                  onChange={(event) => setEditDraft((current) => ({ ...current, stock: event.target.value }))}
+                />
+              </label>
+            )}
+
+            {saveError ? <p className="muted-copy">{saveError}</p> : null}
+
             <div className="auth-actions merch-admin-actions">
-              <button className="primary-button" type="button" onClick={handleSaveProduct}>
-                Save product
+              <button className="primary-button" type="button" onClick={handleSaveProduct} disabled={isSavingProduct || isUploadingImage}>
+                {isSavingProduct ? "Saving..." : "Save product"}
               </button>
-              <button className="ghost-button" type="button" onClick={() => setIsEditOpen(false)}>
+              <button className="ghost-button" type="button" onClick={() => setIsEditOpen(false)} disabled={isSavingProduct || isUploadingImage}>
                 Cancel
               </button>
             </div>

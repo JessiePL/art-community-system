@@ -1,84 +1,20 @@
 import { useMemo, useState } from "react";
+import type { AdminOrderRecord } from "../types/app";
 
-type AdminOrderStatus = "Paid" | "Return requested" | "Returned" | "Shipped" | "Completed" | "Refunded";
-
-type AdminOrder = {
-  id: string;
-  buyerName: string;
-  buyerEmail: string;
-  itemName: string;
-  quantity: number;
-  total: number;
-  status: AdminOrderStatus;
-  orderNumber: string;
-  trackingNumber?: string;
+type AdminPageProps = {
+  orders: AdminOrderRecord[];
+  onShipOrder: (orderId: string, trackingNumber: string) => Promise<unknown>;
+  onRefundOrder: (orderId: string) => Promise<unknown>;
 };
 
-const initialAdminOrders: AdminOrder[] = [
-  {
-    id: "admin-order-001",
-    buyerName: "Jessie Chen",
-    buyerEmail: "test@test.com",
-    itemName: "Hashira Signal Tee",
-    quantity: 2,
-    total: 76,
-    status: "Paid",
-    orderNumber: "ORD-24001",
-  },
-  {
-    id: "admin-order-002",
-    buyerName: "Mina Lee",
-    buyerEmail: "mina@member.acs.com",
-    itemName: "Nezuko Dawn Mug",
-    quantity: 1,
-    total: 24,
-    status: "Return requested",
-    orderNumber: "ORD-24002",
-    trackingNumber: "PKG-8Z41-2209",
-  },
-  {
-    id: "admin-order-003",
-    buyerName: "Kai Wong",
-    buyerEmail: "kai@member.acs.com",
-    itemName: "Corps Canvas Carry",
-    quantity: 1,
-    total: 29,
-    status: "Shipped",
-    orderNumber: "ORD-24003",
-    trackingNumber: "TRK-BC24-90317",
-  },
-  {
-    id: "admin-order-004",
-    buyerName: "Aiko Park",
-    buyerEmail: "aiko@member.acs.com",
-    itemName: "Hashira Signal Tee",
-    quantity: 1,
-    total: 38,
-    status: "Completed",
-    orderNumber: "ORD-24004",
-    trackingNumber: "TRK-BC24-90452",
-  },
-  {
-    id: "admin-order-005",
-    buyerName: "Leo Zhang",
-    buyerEmail: "leo@member.acs.com",
-    itemName: "Nezuko Dawn Mug",
-    quantity: 1,
-    total: 24,
-    status: "Refunded",
-    orderNumber: "ORD-24005",
-    trackingNumber: "PKG-8Z41-2217",
-  },
-];
-
-export default function AdminPage() {
-  const [orders, setOrders] = useState<AdminOrder[]>(initialAdminOrders);
+export default function AdminPage({ orders, onShipOrder, onRefundOrder }: AdminPageProps) {
   const [trackingDrafts, setTrackingDrafts] = useState<Record<string, string>>({});
+  const [feedback, setFeedback] = useState("");
 
   const stats = useMemo(
     () => ({
       paid: orders.filter((order) => order.status === "Paid").length,
-      returned: orders.filter((order) => order.status === "Return requested" || order.status === "Returned").length,
+      returned: orders.filter((order) => order.status === "Return requested").length,
       shipped: orders.filter((order) => order.status === "Shipped").length,
       completed: orders.filter((order) => order.status === "Completed").length,
       refunded: orders.filter((order) => order.status === "Refunded").length,
@@ -86,37 +22,29 @@ export default function AdminPage() {
     [orders],
   );
 
-  const handleShip = (orderId: string) => {
+  const handleShip = async (orderId: string) => {
     const draft = trackingDrafts[orderId]?.trim();
-
     if (!draft) {
+      setFeedback("Shipping code is required before shipping an order.");
       return;
     }
 
-    setOrders((current) =>
-      current.map((order) =>
-        order.id === orderId
-          ? {
-              ...order,
-              status: "Shipped",
-              trackingNumber: draft,
-            }
-          : order,
-      ),
-    );
+    try {
+      await onShipOrder(orderId, draft);
+      setTrackingDrafts((current) => ({ ...current, [orderId]: "" }));
+      setFeedback("Order shipped successfully.");
+    } catch (error) {
+      setFeedback(error instanceof Error ? error.message : "Unable to ship this order.");
+    }
   };
 
-  const handleRefund = (orderId: string) => {
-    setOrders((current) =>
-      current.map((order) =>
-        order.id === orderId
-          ? {
-              ...order,
-              status: "Refunded",
-            }
-          : order,
-      ),
-    );
+  const handleRefund = async (orderId: string) => {
+    try {
+      await onRefundOrder(orderId);
+      setFeedback("Refund completed successfully.");
+    } catch (error) {
+      setFeedback(error instanceof Error ? error.message : "Unable to refund this order.");
+    }
   };
 
   return (
@@ -125,7 +53,7 @@ export default function AdminPage() {
         <article className="glass-card admin-panel-card">
           <p className="card-kicker">Orders</p>
           <h3>{orders.length} buyer order(s)</h3>
-          <p className="muted-copy">Admin view focuses on paid, shipped, returned, and completed orders.</p>
+          <p className="muted-copy">Admin view now reads real order status from the backend.</p>
         </article>
         <article className="glass-card admin-panel-card">
           <p className="card-kicker">Paid</p>
@@ -133,9 +61,9 @@ export default function AdminPage() {
           <p className="muted-copy">Ready for fulfillment and tracking number assignment.</p>
         </article>
         <article className="glass-card admin-panel-card">
-          <p className="card-kicker">Returned</p>
+          <p className="card-kicker">Returns</p>
           <h3>{stats.returned}</h3>
-          <p className="muted-copy">Returned orders waiting for refund handling.</p>
+          <p className="muted-copy">Buyer has submitted a return shipping code and is waiting for refund review.</p>
         </article>
         <article className="glass-card admin-panel-card">
           <p className="card-kicker">Shipped</p>
@@ -162,9 +90,11 @@ export default function AdminPage() {
           </div>
         </div>
 
+        {feedback ? <p className="profile-modal-note">{feedback}</p> : null}
+
         <div className="admin-order-list">
           {orders.map((order) => (
-            <article key={order.id} className="admin-order-card">
+            <article key={`${order.id}-${order.itemName}-${order.selectedSize ?? "default"}`} className="admin-order-card">
               <div className="admin-order-topline">
                 <div>
                   <strong>{order.buyerName}</strong>
@@ -180,10 +110,15 @@ export default function AdminPage() {
                   <h4>{order.itemName}</h4>
                   <p>
                     Qty {order.quantity} · Total ${order.total}
+                    {order.selectedSize ? ` · Size ${order.selectedSize}` : ""}
                   </p>
                   <span>Order # {order.orderNumber}</span>
+                  <span>{order.addressSummary}</span>
                   {order.trackingNumber ? (
-                    <span className="profile-order-tracking">Tracking # {order.trackingNumber}</span>
+                    <span className="profile-order-tracking">Outbound code # {order.trackingNumber}</span>
+                  ) : null}
+                  {order.returnTrackingNumber ? (
+                    <span className="profile-order-tracking">Return code # {order.returnTrackingNumber}</span>
                   ) : null}
                 </div>
 
@@ -198,12 +133,12 @@ export default function AdminPage() {
                             [order.id]: event.target.value,
                           }))
                         }
-                        placeholder="Enter tracking number"
+                        placeholder="Enter shipping code"
                       />
                       <button
                         className="primary-button"
                         type="button"
-                        onClick={() => handleShip(order.id)}
+                        onClick={() => void handleShip(order.id)}
                         disabled={!trackingDrafts[order.id]?.trim()}
                       >
                         Ship
@@ -211,21 +146,19 @@ export default function AdminPage() {
                     </>
                   ) : null}
 
-                  {order.status === "Return requested" || order.status === "Returned" ? (
-                    <>
-                      <button
-                        className="primary-button"
-                        type="button"
-                        onClick={() => handleRefund(order.id)}
-                      >
-                        Refund
-                      </button>
-                    </>
+                  {order.status === "Return requested" ? (
+                    <button
+                      className="primary-button"
+                      type="button"
+                      onClick={() => void handleRefund(order.id)}
+                    >
+                      Refund
+                    </button>
                   ) : null}
 
                   {order.status === "Shipped" ? (
                     <p className="muted-copy admin-order-waiting">
-                      Waiting for buyer-side delivery confirmation.
+                      Waiting for buyer-side receipt confirmation or return request.
                     </p>
                   ) : null}
 

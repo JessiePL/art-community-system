@@ -9,7 +9,10 @@ public class Product : BaseEntity
     public decimal Price { get; set; }
     public int Stock { get; set; }
     public string ImageUrl { get; set; } = string.Empty;
+    public string Note { get; set; } = string.Empty;
+    public string? Lead { get; set; }
+    public string? Detail { get; set; }
+    public Dictionary<string, int>? SizeStock { get; set; }
     public bool IsActive { get; set; } = true;
-
-    public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
+    public int Version { get; set; } = 1;
 }

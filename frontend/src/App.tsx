@@ -1,17 +1,19 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import PaymentModal from "./components/PaymentModal";
 import PageTopbar from "./components/PageTopbar";
-import {
-  creatorCredits,
-  merchandiseCatalog,
-} from "./data/site";
+import AppContent from "./components/AppContent";
+import { useAuthState } from "./hooks/useAuthState";
 import { useCharacterCarousel } from "./hooks/useCharacterCarousel";
+import { useMerchState } from "./hooks/useMerchState";
+import { useOrderHistory } from "./hooks/useOrderHistory";
+import { uploadProductImage } from "./services/merch";
 import AppLayout from "./layout/AppLayout";
-import AdminPage from "./pages/AdminPage";
-import CreatorPage from "./pages/CreatorPage";
-import HomePage from "./pages/HomePage";
-import ProfilePage from "./pages/ProfilePage";
-import ShopPage from "./pages/ShopPage";
-import type { AuthMode, AuthUser, Page, Product, UserRole } from "./types/app";
+import type { Page, Product, ShirtSize } from "./types/app";
+
+type CheckoutItem = Product & {
+  quantity: number;
+  subtotal: number;
+};
 
 const primaryNav: Array<{ id: "home" | "creator" | "shop"; label: string }> = [
   { id: "home", label: "Home" },
@@ -19,393 +21,262 @@ const primaryNav: Array<{ id: "home" | "creator" | "shop"; label: string }> = [
   { id: "shop", label: "Merch" },
 ];
 
+const pageMessages: Record<Exclude<Page, "home">, string> = {
+  creator: "Welcome in. Take a look around and enjoy the creator spotlight.",
+  shop: "Welcome in. Have fun browsing and pick your favorite drop.",
+  profile: "Welcome in. Take a look at your shopping details and profile access.",
+  admin: "Welcome in. Review products, orders, and creator-side controls.",
+};
+
+type PaymentState = {
+  title: string;
+  amount: number;
+  detail: string;
+  items: CheckoutItem[];
+  source: "buy-now" | "cart";
+} | null;
+
+const pathToPage = (pathname: string): Page => {
+  switch (pathname) {
+    case "/":
+    case "/home":
+      return "home";
+    case "/creator":
+      return "creator";
+    case "/shop":
+    case "/merch":
+      return "shop";
+    case "/profile":
+      return "profile";
+    case "/admin":
+      return "admin";
+    default:
+      return "home";
+  }
+};
+
+const pageToPath = (page: Page) => {
+  switch (page) {
+    case "home":
+      return "/home";
+    case "creator":
+      return "/creator";
+    case "shop":
+      return "/shop";
+    case "profile":
+      return "/profile";
+    case "admin":
+      return "/admin";
+  }
+};
+
 export default function App() {
-  const [page, setPage] = useState<Page>("home");
-  const [role, setRole] = useState<UserRole>("guest");
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [products, setProducts] = useState<Product[]>(merchandiseCatalog);
-  const [authMode, setAuthMode] = useState<AuthMode>("login");
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  const [authError, setAuthError] = useState("");
-  const [cart, setCart] = useState<Record<string, number>>({
-    "merch-hashira-shirt": 1,
-    "merch-nezuko-mug": 1,
-  });
+  const [page, setPage] = useState<Page>(() => pathToPage(window.location.pathname));
+  const [successToast, setSuccessToast] = useState("");
   const [message, setMessage] = useState(
     "A visual-first anime art community MVP centered on a cinematic character gallery.",
   );
+  const [paymentState, setPaymentState] = useState<PaymentState>(null);
 
-  const {
-    isCarouselPaused,
-    loopCharacters,
-    effectBurstKey,
-    selectedCharacterId,
-    selectedRenderIndex,
-    stripRef,
-    handleCharacterSelect,
-    scrollGallery,
-  } = useCharacterCarousel({
+  const auth = useAuthState();
+  const merch = useMerchState(setMessage, auth.token);
+  const orderHistory = useOrderHistory(auth.token, auth.role);
+  const carousel = useCharacterCarousel({
     page,
     onStatusChange: setMessage,
   });
 
-  const cartItems = products
-    .filter((product) => cart[product.id])
-    .map((product) => ({
+  const addresses = auth.user?.addresses ?? [];
+  const topbarMessage = page === "home" ? message : pageMessages[page];
+
+  const navigateToPage = (nextPage: Page, historyMode: "push" | "replace" = "push") => {
+    setPage(nextPage);
+    const nextPath = pageToPath(nextPage);
+
+    if (window.location.pathname === nextPath) {
+      return;
+    }
+
+    if (historyMode === "replace") {
+      window.history.replaceState({}, "", nextPath);
+      return;
+    }
+
+    window.history.pushState({}, "", nextPath);
+  };
+
+  useEffect(() => {
+    const normalizedPage = pathToPage(window.location.pathname);
+    const normalizedPath = pageToPath(normalizedPage);
+
+    if (window.location.pathname !== normalizedPath) {
+      window.history.replaceState({}, "", normalizedPath);
+    }
+
+    const handlePopState = () => {
+      setPage(pathToPage(window.location.pathname));
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
+  useEffect(() => {
+    if (!successToast) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => setSuccessToast(""), 2800);
+    return () => window.clearTimeout(timer);
+  }, [successToast]);
+
+  const openLoginFlow = () => {
+    auth.openAuthModal("login");
+    setMessage("Please log in first before adding items or continuing to payment.");
+  };
+
+  const handleAddToCart = (product: Product, selectedSize?: ShirtSize) => {
+    if (!auth.isLoggedIn) {
+      openLoginFlow();
+      return false;
+    }
+
+    merch.addToCart(product, selectedSize);
+    return true;
+  };
+
+  const handleBuyNow = (product: Product, selectedSize?: ShirtSize) => {
+    const checkoutItem: CheckoutItem = {
       ...product,
-      quantity: cart[product.id],
-      subtotal: cart[product.id] * product.price,
-    }));
+      selectedSize,
+      quantity: 1,
+      subtotal: product.price,
+    };
 
-  const cartTotal = cartItems.reduce((sum, item) => sum + item.subtotal, 0);
-  const isLoggedIn = role !== "guest";
-  const isMember = role === "member" || role === "admin";
-  const topbarMessage =
-    page === "creator"
-      ? "Welcome in. Take a look around and enjoy the creator spotlight."
-      : page === "shop"
-        ? "Welcome in. Have fun browsing and pick your favorite drop."
-        : page === "profile"
-          ? "Welcome in. Take a look at your shopping details and profile access."
-          : page === "admin"
-            ? "Welcome in. Review products, orders, and creator-side controls."
-      : message;
-
-  const inferRoleFromEmail = (
-    email: string,
-  ): Extract<UserRole, "fan" | "member" | "admin"> => {
-    const normalizedEmail = email.trim().toLowerCase();
-
-    if (
-      normalizedEmail.endsWith("@admin.acs.com") ||
-      normalizedEmail === "admin@acs.com" ||
-      normalizedEmail === "admin@admin.com"
-    ) {
-      return "admin";
-    }
-
-    if (
-      normalizedEmail.endsWith("@member.acs.com") ||
-      normalizedEmail.includes("+member@")
-    ) {
-      return "member";
-    }
-
-    return "fan";
-  };
-
-  const getDisplayName = (name: string, email: string) => {
-    const trimmedName = name.trim();
-
-    if (trimmedName) {
-      return trimmedName;
-    }
-
-    return email.split("@")[0].replace(/[._-]+/g, " ");
-  };
-
-  const addToCart = (product: Product) => {
-    setCart((current) => ({
-      ...current,
-      [product.id]: (current[product.id] ?? 0) + 1,
-    }));
-    setMessage(`${product.name} added to the cart queue.`);
-  };
-
-  const updateProductField = (productId: string, field: keyof Product, value: string | number) => {
-    setProducts((current) =>
-      current.map((product) =>
-        product.id === productId
-          ? {
-              ...product,
-              [field]: field === "price" || field === "stock" ? Number(value) : value,
-            }
-          : product,
-      ),
-    );
-  };
-
-  const restockProduct = (productId: string, amount: number, size?: "S" | "M" | "L" | "XL") => {
-    setProducts((current) =>
-      current.map((product) => {
-        if (product.id !== productId) {
-          return product;
-        }
-
-        if (size) {
-          const nextSizeStock = {
-            ...product.sizeStock,
-            [size]: Math.max((product.sizeStock?.[size] ?? 0) + amount, 0),
-          };
-
-          const totalStock = Object.values(nextSizeStock).reduce((sum, count) => sum + (count ?? 0), 0);
-
-          return {
-            ...product,
-            sizeStock: nextSizeStock,
-            stock: totalStock,
-          };
-        }
-
-        return {
-          ...product,
-          stock: Math.max(product.stock + amount, 0),
-        };
-      }),
-    );
-  };
-
-  const updateProductImage = (productId: string, imageUrl: string) => {
-    setProducts((current) =>
-      current.map((product) =>
-        product.id === productId
-          ? {
-              ...product,
-              image: imageUrl,
-            }
-          : product,
-      ),
-    );
-  };
-
-  const updateProductSizeStock = (productId: string, size: "S" | "M" | "L" | "XL", stock: number) => {
-    setProducts((current) =>
-      current.map((product) => {
-        if (product.id !== productId) {
-          return product;
-        }
-
-        const nextSizeStock = {
-          ...product.sizeStock,
-          [size]: Math.max(stock, 0),
-        };
-
-        return {
-          ...product,
-          sizeStock: nextSizeStock,
-          stock: Object.values(nextSizeStock).reduce((sum, count) => sum + (count ?? 0), 0),
-        };
-      }),
-    );
-  };
-
-  const increaseCartItem = (product: Product) => {
-    setCart((current) => ({
-      ...current,
-      [product.id]: (current[product.id] ?? 0) + 1,
-    }));
-    setMessage(`${product.name} quantity increased in your cart.`);
-  };
-
-  const decreaseCartItem = (product: Product) => {
-    setCart((current) => {
-      const nextQuantity = Math.max((current[product.id] ?? 0) - 1, 0);
-
-      if (nextQuantity === 0) {
-        const { [product.id]: _removed, ...remaining } = current;
-        return remaining;
-      }
-
-      return {
-        ...current,
-        [product.id]: nextQuantity,
-      };
+    setPaymentState({
+      title: `Buy ${product.name}${selectedSize ? ` (${selectedSize})` : ""}`,
+      amount: product.price,
+      detail: "Choose a shipping address, then scan this QR code for the single product you selected.",
+      items: [checkoutItem],
+      source: "buy-now",
     });
-
-    setMessage(`${product.name} quantity reduced in your cart.`);
-  };
-
-  const removeCartItem = (product: Product) => {
-    setCart((current) => {
-      const { [product.id]: _removed, ...remaining } = current;
-      return remaining;
-    });
-    setMessage(`${product.name} removed from your cart.`);
-  };
-
-  const handleBuyNow = (product: Product) => {
-    setCart((current) => ({
-      ...current,
-      [product.id]: Math.max(current[product.id] ?? 0, 1),
-    }));
-
-    if (!isLoggedIn) {
-      setMessage(`${product.name} is ready, but sign in first before purchase can continue.`);
-      return;
-    }
-
-    if (!isMember) {
-      setMessage(`${product.name} is in your cart, but only members can complete checkout.`);
-      return;
-    }
-
-    setMessage(`${product.name} moved straight into the member checkout flow.`);
+    setMessage(`${product.name}${selectedSize ? ` (${selectedSize})` : ""} is ready for direct payment.`);
   };
 
   const handleCartCheckout = () => {
-    if (cartItems.length === 0) {
+    if (merch.cartItems.length === 0) {
       setMessage("Your cart is empty. Add merchandise before checkout.");
       return;
     }
 
-    if (!isLoggedIn) {
-      setMessage("Your cart is ready, but sign in first before purchase can continue.");
-      return;
-    }
-
-    if (!isMember) {
-      setMessage("Your cart is saved, but only members can complete checkout.");
-      return;
-    }
-
-    setMessage(`Checkout is ready for ${cartItems.length} cart item(s).`);
-  };
-
-  const openAuthModal = (mode: AuthMode) => {
-    setAuthMode(mode);
-    setAuthError("");
-    setShowAuthModal(true);
-  };
-
-  const closeAuthModal = () => {
-    setShowAuthModal(false);
-    setAuthError("");
-  };
-
-  const handleAuthSubmit = (
-    mode: AuthMode,
-    draft: { name: string; email: string; password: string },
-  ) => {
-    const email = draft.email.trim().toLowerCase();
-    const password = draft.password.trim();
-    const name = getDisplayName(draft.name, email);
-    const isDemoFanAccount = email === "test@test.com" && password === "123456";
-    const isDemoAdminAccount = email === "admin@admin.com" && password === "123456";
-
-    if (!email || !password) {
-      setAuthError("Email and password are required.");
-      return;
-    }
-
-    if (mode === "login" && !isDemoFanAccount && !isDemoAdminAccount) {
-      setAuthError("Use test@test.com or admin@admin.com with password 123456 to log in.");
-      return;
-    }
-
-    if (mode === "register" && !draft.name.trim()) {
-      setAuthError("Name is required for registration.");
-      return;
-    }
-
-    const nextRole = isDemoAdminAccount
-      ? "admin"
-      : isDemoFanAccount
-        ? "fan"
-        : inferRoleFromEmail(email);
-
-    setUser({
-      name,
-      email,
-      role: nextRole,
+    setPaymentState({
+      title: "Pay for Cart",
+      amount: merch.cartTotal,
+      detail: "Choose a shipping address, then scan this QR code to pay for every item currently in your cart.",
+      items: merch.cartItems,
+      source: "cart",
     });
-    setRole(nextRole);
-    setAuthError("");
-    setShowAuthModal(false);
-    setPage(nextRole === "admin" ? "admin" : "profile");
-
-    if (nextRole === "fan") {
-      setMessage("Signed in as a fan. Public browsing plus profile access is available.");
-      return;
-    }
-
-    if (nextRole === "member") {
-      setMessage("Signed in as a member. Member-only checkout is now available.");
-      return;
-    }
-
-    setMessage("Signed in as an admin. Management-level access is now available.");
+    setMessage(`Cart payment is ready for ${merch.cartItems.length} item(s).`);
   };
 
-  const handleLogout = () => {
-    setRole("guest");
-    setUser(null);
-    setPage("home");
-    setShowAuthModal(false);
-    setAuthError("");
-    setMessage("Signed out. Public browsing mode restored.");
+  const handlePaymentSuccess = async (selectedAddressId: string | null) => {
+    if (!paymentState) {
+      return;
+    }
+
+    const selectedAddress =
+      addresses.find((address) => address.id === selectedAddressId) ??
+      addresses.find((address) => address.isPrimary) ??
+      null;
+
+    const checkoutResponse = await orderHistory.checkoutItems(paymentState.items, selectedAddress);
+    merch.completeCheckout(paymentState.items, checkoutResponse.products);
+    navigateToPage("profile");
+
+    const orderCount = checkoutResponse.orders.length;
+    const destinationLabel = selectedAddress ? ` to ${selectedAddress.label}` : "";
+    const sourceLabel = paymentState.source === "cart" ? "cart" : "direct";
+
+    setMessage(
+      `${orderCount} paid order${orderCount > 1 ? "s were" : " was"} created from ${sourceLabel} checkout${destinationLabel}.`,
+    );
+  };
+
+  const handleSaveProduct = async (productId: string, draft: import("./hooks/useMerchState").ProductEditorDraft) => {
+    const product = await merch.saveProduct(productId, draft);
+    setSuccessToast(`${product.name} saved successfully.`);
+    return product;
+  };
+
+  const handleUploadProductImage = async (file: File) => {
+    if (!auth.token) {
+      throw new Error("Admin login is required before uploading a product image.");
+    }
+
+    return uploadProductImage(file, auth.token);
   };
 
   return (
-    <AppLayout
-      page={page}
-      isLoggedIn={isLoggedIn}
-      role={role}
-      navItems={primaryNav}
-      onNavigate={setPage}
-      authMode={authMode}
-      authError={authError}
-      onOpenAuth={openAuthModal}
-      onCloseAuth={closeAuthModal}
-      onSubmitAuth={handleAuthSubmit}
-      onSwitchAuthMode={setAuthMode}
-      onLogout={handleLogout}
-      showAuthModal={showAuthModal}
-      topbar={
-        page !== "home" ? <PageTopbar page={page} message={topbarMessage} /> : undefined
-      }
-    >
-      {page === "home" && (
-        <HomePage
-          isCarouselPaused={isCarouselPaused}
-          loopCharacters={loopCharacters}
-          effectBurstKey={effectBurstKey}
-          selectedCharacterId={selectedCharacterId}
-          selectedRenderIndex={selectedRenderIndex}
-          stripRef={stripRef}
-          onCharacterSelect={handleCharacterSelect}
-          onScrollGallery={scrollGallery}
-        />
-      )}
-
-      {page === "creator" && (
-        <CreatorPage
-          author={creatorCredits.author}
-          studio={creatorCredits.studio}
-        />
-      )}
-
-      {page === "shop" && (
-        <ShopPage
-          products={products}
-          isAdmin={role === "admin"}
-          isLoggedIn={isLoggedIn}
-          cartItems={cartItems}
-          cartTotal={cartTotal}
-          onAddToCart={addToCart}
-          onIncreaseCartItem={increaseCartItem}
-          onDecreaseCartItem={decreaseCartItem}
-          onRemoveCartItem={removeCartItem}
+    <>
+      <AppLayout
+        page={page}
+        isLoggedIn={auth.isLoggedIn}
+        role={auth.role}
+        navItems={primaryNav}
+        onNavigate={navigateToPage}
+        authMode={auth.authMode}
+        authError={auth.authError}
+        onOpenAuth={auth.openAuthModal}
+        onCloseAuth={auth.closeAuthModal}
+        onSubmitAuth={(mode, draft) => auth.handleAuthSubmit(mode, draft, navigateToPage, setMessage)}
+        onSwitchAuthMode={auth.setAuthMode}
+        onLogout={() => auth.handleLogout(navigateToPage, setMessage)}
+        showAuthModal={auth.showAuthModal}
+        topbar={page !== "home" ? <PageTopbar page={page} message={topbarMessage} /> : undefined}
+        toastMessage={successToast}
+      >
+        <AppContent
+          page={page}
+          role={auth.role}
+          isLoggedIn={auth.isLoggedIn}
+          carousel={carousel}
+          user={auth.user}
+          addresses={addresses}
+          orders={orderHistory.orders}
+          adminOrders={orderHistory.adminOrders}
+          products={merch.products}
+          cartItems={merch.cartItems}
+          cartTotal={merch.cartTotal}
+          onAddToCart={handleAddToCart}
+          onIncreaseCartItem={merch.increaseCartItem}
+          onDecreaseCartItem={merch.decreaseCartItem}
+          onRemoveCartItem={merch.removeCartItem}
           onBuyNow={handleBuyNow}
           onCartCheckout={handleCartCheckout}
-          onUpdateProductField={updateProductField}
-          onRestockProduct={restockProduct}
-          onUpdateProductImage={updateProductImage}
-          onUpdateProductSizeStock={updateProductSizeStock}
+          onRequireLogin={openLoginFlow}
+          onSaveAddress={auth.saveAddress}
+          onRemoveAddress={auth.removeAddress}
+          onSetPrimaryAddress={auth.setPrimaryAddress}
+          onRequestReturn={orderHistory.requestReturn}
+          onConfirmReceipt={orderHistory.confirmReceipt}
+          onSaveProfile={auth.updateProfile}
+          onChangePassword={auth.changePassword}
+          onSaveProduct={handleSaveProduct}
+          onUploadProductImage={handleUploadProductImage}
+          onShipOrder={orderHistory.shipOrder}
+          onRefundOrder={orderHistory.refundOrder}
         />
-      )}
+      </AppLayout>
 
-      {page === "profile" && (
-        <ProfilePage
-          user={user}
-          cartItems={cartItems}
-          onIncreaseCartItem={increaseCartItem}
-          onDecreaseCartItem={decreaseCartItem}
-          onRemoveCartItem={removeCartItem}
-          onCartCheckout={handleCartCheckout}
-        />
-      )}
-
-      {page === "admin" && <AdminPage />}
-    </AppLayout>
+      <PaymentModal
+        isOpen={paymentState !== null}
+        title={paymentState?.title ?? ""}
+        amount={paymentState?.amount ?? 0}
+        detail={paymentState?.detail ?? ""}
+        addresses={addresses}
+        onConfirmPayment={handlePaymentSuccess}
+        onClose={() => setPaymentState(null)}
+      />
+    </>
   );
 }

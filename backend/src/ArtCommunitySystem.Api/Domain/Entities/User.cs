@@ -11,7 +11,6 @@ public class User : BaseEntity
     public UserRole Role { get; set; } = UserRole.Customer;
     public bool IsMember { get; set; }
     public int MembershipLevel { get; set; }
-
     public ICollection<Address> Addresses { get; set; } = new List<Address>();
-    public ICollection<Order> Orders { get; set; } = new List<Order>();
+    public ICollection<UserCartItem> CartItems { get; set; } = new List<UserCartItem>();
 }

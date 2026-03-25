@@ -1,3 +1,12 @@
 node_modules/
 **/node_modules/
 frontend/dist/
+frontend/.env
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.production.local
+**/appsettings.Development.json
+**/bin/
+**/obj/
+**/Properties/launchSettings.json
+.vs/

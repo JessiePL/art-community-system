@@ -90,7 +90,7 @@ export const merchandiseCatalog: Array<{
   sizeStock?: Partial<Record<"S" | "M" | "L" | "XL", number>>;
 }> = [
   {
-    id: "merch-hashira-shirt",
+    id: "66f100000000000000000001",
     name: "Hashira Signal Tee",
     category: "T-shirt",
     price: 38,
@@ -108,7 +108,7 @@ export const merchandiseCatalog: Array<{
     },
   },
   {
-    id: "merch-nezuko-mug",
+    id: "66f100000000000000000002",
     name: "Nezuko Dawn Mug",
     category: "Mug",
     price: 24,
@@ -120,7 +120,7 @@ export const merchandiseCatalog: Array<{
       "A practical display item for home setups, shelves, and daily use without losing the anime visual identity.",
   },
   {
-    id: "merch-corps-bag",
+    id: "66f100000000000000000003",
     name: "Corps Canvas Carry",
     category: "Canvas Bag",
     price: 29,

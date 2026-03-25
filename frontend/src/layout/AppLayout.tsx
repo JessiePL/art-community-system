@@ -27,6 +27,7 @@ type AppLayoutProps = PropsWithChildren<{
   onLogout: () => void;
   showAuthModal: boolean;
   topbar?: ReactNode;
+  toastMessage?: string;
 }>;
 
 const emptyDraft: AuthDraft = {
@@ -51,6 +52,7 @@ export default function AppLayout({
   onLogout,
   showAuthModal,
   topbar,
+  toastMessage,
 }: AppLayoutProps) {
   const [draft, setDraft] = useState<AuthDraft>(emptyDraft);
 
@@ -64,7 +66,7 @@ export default function AppLayout({
   const description =
     authMode === "login"
       ? "Enter your email and password. The system will infer your access level from the email."
-      : "Create an account with your name, email, and password. Email decides whether you are fan, member, or admin.";
+      : "Create an account with your name, email, and password. New accounts start as standard users.";
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -74,6 +76,12 @@ export default function AppLayout({
   return (
     <>
       <div className="wisteria-canopy" aria-hidden="true" />
+
+      {toastMessage ? (
+        <div className="app-toast app-toast-success" role="status" aria-live="polite">
+          {toastMessage}
+        </div>
+      ) : null}
 
       <div className="app-shell">
         <aside className="sidebar glass-card">
@@ -218,7 +226,7 @@ export default function AppLayout({
                   onChange={(event) =>
                     setDraft((current) => ({ ...current, email: event.target.value }))
                   }
-                  placeholder="name@member.acs.com"
+                  placeholder="name@example.com"
                 />
               </label>
 
