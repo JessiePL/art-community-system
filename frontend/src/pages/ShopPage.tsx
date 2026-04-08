@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { ChangeEvent } from "react";
+import { useCachedImageUrls } from "../hooks/useCachedImageUrls";
 import type { ProductEditorDraft } from "../hooks/useMerchState";
 import "../styles/merch.css";
 import type { Product, ShirtSize } from "../types/app";
@@ -94,6 +95,7 @@ export default function ShopPage({
   const previousProduct = products[(activeIndex - 1 + products.length) % products.length];
   const nextProduct = products[(activeIndex + 1) % products.length];
   const cartItemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  const resolveImageSrc = useCachedImageUrls(products.map((product) => product.image));
 
   if (!activeProduct) {
     return null;
@@ -251,12 +253,12 @@ export default function ShopPage({
 
         <article key={activeProduct.id} className="glass-card merch-feature-card">
           <div className="merch-peek merch-peek-left" aria-hidden="true">
-            <img src={previousProduct.image} alt="" />
+            <img src={resolveImageSrc(previousProduct.image)} alt="" />
             <span>{previousProduct.name}</span>
           </div>
 
           <div className="merch-peek merch-peek-right" aria-hidden="true">
-            <img src={nextProduct.image} alt="" />
+            <img src={resolveImageSrc(nextProduct.image)} alt="" />
             <span>{nextProduct.name}</span>
           </div>
 
@@ -268,7 +270,7 @@ export default function ShopPage({
 
           <div className="merch-feature">
             <div className="merch-visual-panel">
-              <img src={activeProduct.image} alt={activeProduct.name} />
+              <img src={resolveImageSrc(activeProduct.image)} alt={activeProduct.name} />
             </div>
 
             <div className="merch-copy-panel">
@@ -384,7 +386,7 @@ export default function ShopPage({
                   cartItems.map((item) => (
                     <article key={`${item.id}-${item.selectedSize ?? "default"}`} className="merch-cart-row">
                       <div className="merch-cart-item-main">
-                        <img src={item.image} alt={item.name} />
+                        <img src={resolveImageSrc(item.image)} alt={item.name} />
                         <div className="merch-cart-copy">
                           <strong>{item.name}</strong>
                           <span>
@@ -440,7 +442,7 @@ export default function ShopPage({
             </div>
 
             <div className="merch-admin-image-panel">
-              <img src={editDraft.image || activeProduct.image} alt={activeProduct.name} />
+              <img src={resolveImageSrc(editDraft.image || activeProduct.image)} alt={activeProduct.name} />
               <div className="merch-admin-image-actions">
                 <input
                   ref={imageInputRef}
